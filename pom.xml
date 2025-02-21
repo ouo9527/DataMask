@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.ouo.mask</groupId>
+    <artifactId>data-mask</artifactId>
+    <version>1.0.0<!--SNAPSHOT--></version>
+    <name>mask</name>
+    <description>无感脱敏</description>
+    <properties>
+        <java.version>8</java.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+
+        <!-- 跳过测试和源码打包 -->
+        <!-- 跳过测试： 1、采用参数命令： mvn clean package -Dmaven.test.skip=true 或mvn clean package -DskipTests
+          2、在 IDEA 的 Maven 可视化面板里点击即可，也可在上方勾选跳过测试的图标（绿色的闪电⚡）
+          3、在项目的 pom 文件的 <properties> 下配置 <skipTests>true</skipTests>
+            是由于spring-boot-maven-plugin 插件集成了maven-surefire-plugin 插件，会自动运行 junit test
+        -->
+        <maven.test.skip>true</maven.test.skip>
+        <!--<maven.source.skip>false</maven.source.skip>-->
+
+        <!-- 依赖 -->
+        <spring.version>5.3.34</spring.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
+        <!-- json<->bean -->
+        <fastjson2.version>2.0.8</fastjson2.version>
+        <!-- xml<->bean -->
+        <!--<dom4j.version>2.1.4</dom4j.version>-->
+        <!-- XPath -->
+        <!--<jaxen.version>1.1.6</jaxen.version>-->
+        <!-- Hutool -->
+        <hutool.version>5.8.21</hutool.version>
+        <!-- bouncycastle：密钥算法 -->
+        <bouncycastle.version>1.75</bouncycastle.version>
+    </properties>
+
+    <!-- 仓库配置 -->
+    <distributionManagement>
+        <repository>
+            <id>ouo-repo</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Boot BOM依赖管理 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Spring BOM依赖管理 -->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- spring -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!--
+            spring-boot-configuration-processor其实是一个注解处理器，在编译阶段干活的，一般在maven的声明都是 ,optional 为true;
+            在打包时从用@ConfigurationProperties注释的项轻松生成自己的配置元数据文件
+        -->
+        <!--<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>-->
+        <!-- propertiestojson: 解决properties文件转Map时，将key中属性引用变成对象（不建议使用，依赖Gson） -->
+        <!--<dependency>
+            <groupId>pl.jalokim.propertiestojson</groupId>
+            <artifactId>java-properties-to-json</artifactId>
+            <version>${propertiestojson.version}</version>
+            <optional>true</optional>
+        </dependency>-->
+        <!-- yaml、properties、json三者互转 -->
+        <!--<dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-properties</artifactId>
+            <optional>true</optional>
+        </dependency>-->
+        <!-- json: fastjson -->
+        <!--<dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>${fastjson2.version}</version>
+        </dependency>-->
+        <!-- xml<->bean -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+        <!-- hutool -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-crypto</artifactId>
+            <version>${hutool.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <!-- 加密 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15to18</artifactId>
+            <version>${bouncycastle.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <!-- 日志 -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.annotation-api</artifactId>
+                    <groupId>jakarta.annotation</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- 解决IDEA不兼容 -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven-deploy-plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
