@@ -9,7 +9,7 @@ import java.util.Map;
  * Author:   刘春
  * Date:     2024/11/28
  ***********************************************************/
-public interface TemplateExpressionResolver {
+public interface ExpressionResolver {
 
     /**
      * 获取表达式值

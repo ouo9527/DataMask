@@ -7,7 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
 import com.ouo.mask.spel.SpelExpressionMetaData;
-import com.ouo.mask.spel.SpelTemplateExpressionResolver;
+import com.ouo.mask.spel.SpelExpressionResolver;
 import com.ouo.mask.util.SpringUtil;
 
 import java.util.HashMap;
@@ -40,7 +40,7 @@ public interface LogDesensitizationParser {
             return template;
         }
         DesensitizationHandler desensitizedhandler = SpringUtil.getBean(DesensitizationHandler.class);
-        SpelTemplateExpressionResolver expressionResolver = SpringUtil.getBean(SpelTemplateExpressionResolver.class);
+        SpelExpressionResolver expressionResolver = SpringUtil.getBean(SpelExpressionResolver.class);
         // 先对日志参数脱敏 Collectors.toMap中key和value都不支持null，否则报空指针，因此需进行如转换：Collectors.toMap(i -> "p" + i, i -> null == args[i] ? "null" : args[i])
         final Map<String, Object> data = desensitizedhandler.desensitized(loggerName, SceneEnum.LOG, null,
                 IntStream.range(0, args.length).boxed().collect(HashMap::new, (m, i) -> m.put("p" + i, args[i]), HashMap::putAll));

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.ouo.mask.handler.DefaultDesensitizationHandler;
 import com.ouo.mask.handler.DesensitizationHandler;
-import com.ouo.mask.spel.SpelTemplateExpressionResolver;
-import com.ouo.mask.spel.TemplateExpressionResolver;
+import com.ouo.mask.spel.ExpressionResolver;
+import com.ouo.mask.spel.SpelExpressionResolver;
 import com.ouo.mask.support.log.LogbackContextInitializer;
 import com.ouo.mask.support.web.DesensitizationResponseBodyAdvice;
 import com.ouo.mask.util.SpringUtil;
@@ -67,7 +67,7 @@ public class DesensitizationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TemplateExpressionResolver templateExpressionResolver() {
-        return new SpelTemplateExpressionResolver();
+    public ExpressionResolver expressionResolver() {
+        return new SpelExpressionResolver();
     }
 }

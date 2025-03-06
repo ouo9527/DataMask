@@ -10,7 +10,7 @@ import org.springframework.expression.spel.support.SimpleEvaluationContext;
 
 import java.util.Map;
 
-public class SpelTemplateExpressionResolver implements TemplateExpressionResolver {
+public class SpelExpressionResolver implements ExpressionResolver {
 
     @Override
     public <T> T getValue(String expression, SpelExpressionMetaData metadata, Map<String, Object> contextVariables
