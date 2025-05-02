@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 /***********************************************************
- * TODO:     脱敏处理AOP处理
+ * 脱敏处理AOP处理
  *  {@link org.springframework.web.bind.annotation.ResponseBody}
  * Author:   刘春
  * Date:     2022/12/1
@@ -38,7 +38,7 @@ public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Obj
         if (null != handler && null != returnType && !Void.TYPE.equals(returnType.getMethod().getReturnType())) {
             Boolean enabled = AnnotationUtil.getAnnotationValue(returnType.getMethod(), Desensitization.class,
                     "enabled");
-            return null == enabled || enabled;
+            return (null == enabled || enabled) && handler.supports(returnType.getDeclaringClass().getName());
         }
         return false;
     }
@@ -53,6 +53,6 @@ public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Obj
         } catch (RuntimeException e) {
         }
         return (null != permission && permission.hasNotPermission(request)) ? body :
-                handler.desensitized(returnType.getDeclaringClass().getName(), SceneEnum.WEB, null, body);
+                handler.desensitized(SceneEnum.WEB, body);
     }
 }

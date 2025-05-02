@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ouo.mask</groupId>
     <artifactId>data-mask</artifactId>
-    <version>1.0.0<!--SNAPSHOT--></version>
+    <version>2.1.0<!--SNAPSHOT--></version>
     <name>mask</name>
     <description>无感脱敏</description>
     <properties>
@@ -39,6 +39,10 @@
         <hutool.version>5.8.21</hutool.version>
         <!-- bouncycastle：密钥算法 -->
         <bouncycastle.version>1.75</bouncycastle.version>
+        <!-- 高性能深拷贝：Kryo、FST(2.x-JDK1.7及以上、3.x-JDK14及以上) -->
+        <fst.version>2.57</fst.version>
+        <kryo.version>5.6.2</kryo.version>
+
     </properties>
 
     <!-- 仓库配置 -->
@@ -115,17 +119,28 @@
             <artifactId>fastjson2</artifactId>
             <version>${fastjson2.version}</version>
         </dependency>-->
-        <!-- xml<->bean -->
+        <!-- xml<->bean：依赖StAX 实现（如 Woodstox）-->
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+        <!-- 高性能深拷贝：Kryo、FST -->
+        <!--<dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>fst</artifactId>
+            <version>${fst.version}</version>
+        </dependency>-->
+        <!-- Kryo：依赖objenesis -->
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>${kryo.version}</version>
         </dependency>
         <!-- hutool -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-crypto</artifactId>
             <version>${hutool.version}</version>
-            <optional>true</optional>
         </dependency>
         <!-- 加密 -->
         <dependency>
@@ -162,6 +177,10 @@
                 <exclusion>
                     <artifactId>slf4j-api</artifactId>
                     <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>objenesis</artifactId>
+                    <groupId>org.objenesis</groupId>
                 </exclusion>
             </exclusions>
         </dependency>

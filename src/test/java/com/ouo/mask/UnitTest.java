@@ -4,6 +4,13 @@ import cn.hutool.core.bean.BeanPath;
 import cn.hutool.core.comparator.CompareUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.Dict;
+import cn.hutool.core.text.StrBuilder;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.ByteBufferInput;
+import com.esotericsoftware.kryo.io.ByteBufferOutput;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -18,21 +25,22 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.helpers.MessageFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /*import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;*/
 
 @Slf4j
-//todo：Junit4需要@RunWith(SpringRunner.class)+@SpringBootTest配置合；而Junit5不需要@RunWith
+//Junit4需要@RunWith(SpringRunner.class)+@SpringBootTest配置合；而Junit5不需要@RunWith
 //@RunWith(SpringRunner.class)
 @SpringBootTest(classes = DesensitizationAutoConfiguration.class/*, properties = {"classpath*:application.yml"}*/)
 public class UnitTest {
@@ -74,11 +82,11 @@ public class UnitTest {
      */
     @Test
     public void properties() throws IOException {
-        //todo: 仅有单层的Map
+        //仅有单层的Map
         Properties properties = new Properties();
         properties.load(new ClassPathResource("application.properties").getInputStream());
 
-        //todo：具体层级的Map
+        //具体层级的Map
         Dict dict = Dict.create();
         properties.entrySet().stream()
                 .sorted((e1, e2) ->
@@ -102,36 +110,39 @@ public class UnitTest {
         data.put("name", "[\"张三丰\",2]");
         data.put("ip", "14.23.0.1");
 
-        User u = new User();
+        User u = new User("");
         u.setExtra("[\"北京市朝阳区发和小区1号楼2单元303室\"]");
         u.setMobile("17722657194");
-        u.setIdCard("6879796065447");
+        u.setIdCard(new StrBuilder("6879796065447"));
         data.put("user", u);
 
-        log.info("根据配置进行脱敏：{}", objectMapper.writeValueAsString(handler.desensitized(UnitTest.class.getName(), SceneEnum.ALL, null, data)));
+        System.out.printf("根据配置进行脱敏：%s\n", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.ALL, data)));
 
-        User user = new User();
+        User user = new User("");
         user.setName("张王四");
-        user.setExtra("{\"phone\":17722657194}");
+        //user.setExtra("{\"phone\":17722657194}");
+        user.setExtra("<text><![CDATA[<name>张二</name>]]></text>");
         user.setTel("0987-2322");
         user.setPhone("17722657194");
         user.setMobile("17722657194");
-        user.setAddr("北京市朝阳区发和小区1号楼2单元303室");
+        user.setAddr(new String[]{"北京市朝阳区发和小区1号楼2单元303室", "广东省深圳市福田区1单元"});
         user.setAmount("10387.34");
         user.setCar("云A8848");
-        user.setBankCard("636669809199510286631");
+        user.setBankCard(new StringBuilder("636669809199510286631"));
         user.setPassport("G99923456");
         user.setDate("2023年9月11日");
-        User.Attach attach = new User.Attach();
-        attach.setHobbies(new String[]{"打球"});
+        user.setIdCard(new StrBuilder("6879796065447"));
+        user.setAges(new int[]{23, 300});
+        User.Attach attach = user.new Attach();
+        attach.setHobbies(Arrays.asList("打球"));
         attach.setEmail("lc123@qq.com");
         attach.setCard("532128199510286631");
         user.setAttach(attach);
 
-        log.info("根据注解&配置进行脱敏：{}", objectMapper.writeValueAsString(handler.desensitized(UnitTest.class.getName(), SceneEnum.ALL, null, user)));
+        log.info("根据注解&配置进行脱敏：{}", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.ALL, user)));
 
-        String xml = "<Student> <Name> 李四 </Name> <Phones> <Phone> 13333333311 </Phone> <Phone> 13333333312 </Phone></Phones> <text><![CDATA[<name>张三</name>]]></text> </Student>";
-        log.info("XML字符串脱敏后数据：{}", handler.desensitized(UnitTest.class.getName(), SceneEnum.ALL, null, xml));
+        String xml = "<Student> <Name> 李四 </Name> <Phones> <Phone> 13333333311 </Phone> <Phone> &lt;13333333312> </Phone></Phones> <text><![CDATA[<name>张曼玉</name>]]></text> </Student>";
+        log.info("XML字符串脱敏后数据：{}", handler.desensitized(SceneEnum.ALL, "", xml));
     }
 
     /**
@@ -155,20 +166,20 @@ public class UnitTest {
         LogDesensitizationParser desensitizedLog = new LogDesensitizationParser() {
         };
 
-        User user = new User();
+        User user = new User("");
         user.setName("张王四");
         user.setExtra("{\"phone\":17722657194}");
         user.setTel("0987-2322");
         user.setPhone("17722657194");
         user.setMobile("17722657194");
-        user.setAddr("北京市朝阳区发和小区1号楼2单元303室");
+        user.setAddr(new String[]{"北京市朝阳区发和小区1号楼2单元303室", "广东省深圳市福田区1单元"});
         user.setAmount("10387.34");
         user.setCar("云A8848");
-        user.setBankCard("636669809199510286631");
+        user.setBankCard(new StringBuilder("636669809199510286631"));
         user.setPassport("G99923456");
         user.setDate("2023年9月11日");
-        User.Attach attach = new User.Attach();
-        attach.setHobbies(new String[]{"打球"});
+        User.Attach attach = user.new Attach();
+        attach.setHobbies(Arrays.asList("打球"));
         attach.setEmail("lc123@qq.com");
         attach.setCard("532128199510286631");
         user.setAttach(attach);
@@ -185,9 +196,90 @@ public class UnitTest {
                 "{}、用户名={name}、电话号码={Phone}、{}、{}", new Object[]{user.getAddr(), user.getName(), user.getPhone(), null}));
     }
 
+    /**
+     * 高性能深拷贝
+     */
+    @Test
+    public void deeCopy() throws IOException {
+        User user = new User("");
+        user.setName("张王四");
+        user.setExtra("{\"phone\":17722657194}");
+        user.setTel("0987-2322");
+        user.setPhone("17722657194");
+        user.setMobile("17722657194");
+        user.setAddr(new String[]{"北京市朝阳区发和小区1号楼2单元303室", "广东省深圳市福田区1单元"});
+        user.setAmount("10387.34");
+        user.setCar("云A8848");
+        user.setBankCard(new StringBuilder("636669809199510286631"));
+        user.setPassport("G99923456");
+        user.setDate("2023年9月11日");
+        User.Attach attach = user.new Attach();
+        attach.setHobbies(Arrays.asList("打球"));
+        attach.setEmail("lc123@qq.com");
+        attach.setCard("532128199510286631");
+        user.setAttach(attach);
+        user.setPassowrd("helloword");
+        user.setIdCard(new StrBuilder("2368uhg"));
+
+        // FST（线程安全）
+        //FSTConfiguration fstConfiguration = FSTConfiguration.createDefaultConfiguration();
+        //fstConfiguration.setShareReferences(false); // 关闭对象引用共享，减少元数据开销
+        //fstConfiguration.setForceSerializable(true); // 允许未实现Serializable or externalizable
+
+        //fstConfiguration.setInstantiator(new FSTDefaultClassInstantiator()); // 避免反射创建实例
+
+        //fstConfiguration.registerSerializer(Object.class, new FSTBasicObjectSerializer());
+
+        // Kryo（线程不安全）：copy方法支持transient修饰属性拷贝（但序列化不支持），不支持非静态内部类和只依赖无参构造函数，可以使用objenesis框架的StdInstantiatorStrategy策略解决
+        Kryo kryo = new Kryo();
+        kryo.setReferences(true); // 开启序列化时引用共享（避免死循环）
+        kryo.setCopyReferences(true); // 启用拷贝时引用共享（深拷贝场景）
+        kryo.setRegistrationRequired(false); // 关闭强制注册
+        //kryo.setOptimizedGenerics(true);  // 启用泛型推导即自动推断泛型类型，避免重复写入类信息（需启用优化）（默认开启）
+        // 使用 Objenesis 策略（支持非静态内部类和只依赖无参构造函数）
+        kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+
+
+        // kryo.register：自定义序列化器，可以替换DefaultSerializers中定义内置序列化器，但不能替换UnsafeField中定义内置序列化器
+//        kryo.register(StringBuilder.class, new DesensitizationCharSequenceSerializer(null));
+//        kryo.register(StringBuffer.class, new DesensitizationCharSequenceSerializer(null));
+//        kryo.register(String.class, new DesensitizationCharSequenceSerializer(null));
+//        kryo.register(String[].class, new DesensitizationCharSequenceSerializer(null));
+//        kryo.register(char[].class, new DesensitizationCharSequenceSerializer(null));
+
+
+        // 自定义序列化器，可以替换DefaultSerializers中定义内置序列化器，但不能替换UnsafeField中定义内置序列化器
+        //kryo.addDefaultSerializer(StrBuilder.class, stringSerializer);
+        //kryo.setDefaultSerializer(new DesensitizationFieldSerializerFactory(null));
+
+
+        //System.out.println("Hutool浅拷贝：" + BeanUtil.toBean(user, User.class));
+        //System.out.println("FST深拷贝：" + fstConfiguration.deepCopy(user).getName());
+        System.out.println("Kryo深拷贝：" + kryo.copy(user));
+
+        // 序列化
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Output output = new ByteBufferOutput(baos);
+        kryo.writeObject(output, user); // 实际写入 "CUSTOM_hello"
+        output.close();
+
+        // 反序列化
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        Input input = new ByteBufferInput(bais);
+        User deserialized = kryo.readObject(input, User.class);
+
+    }
+
     @Setter
     @Getter
-    static class User {
+    public static class User extends BasicUser {
+
+        private static final String ip = "192.168.55.13";
+        private final String FNAME = "常量可序列化";
+        public StrBuilder idCard;
+        @Mask(type = SensitiveTypeEnum.ADDRESS)
+        String[] addr;
+
         @Mask(type = SensitiveTypeEnum.FULL_NAME)
         String name;
         @Repl(posns = {@Repl.Posn(i = 3), @Repl.Posn(i = 8, rv = "#")})
@@ -199,34 +291,42 @@ public class UnitTest {
         String phone;
         @Mask(type = SensitiveTypeEnum.MOBILE_PHONE, show = @Mask.CustomShow(pre = 2, suf = 3))
         String mobile;
-        @Mask(type = SensitiveTypeEnum.ADDRESS)
-        String addr;
+        @Mask(type = SensitiveTypeEnum.BANK_CARD)
+        StringBuilder bankCard; //StrBuilder
         @Mask(type = SensitiveTypeEnum.NUMBER)
         String amount;
         @Mask(type = SensitiveTypeEnum.CAR_LICENSE)
         String car;
         @Mask(type = SensitiveTypeEnum.PASSPORT)
         String passport;
-        @Mask(type = SensitiveTypeEnum.BANK_CARD)
-        String bankCard;
+        private transient String tname = "transient变量不可序列化";
         @Regex(pattern = "(\\d{4})年(\\d{1,2})月(\\d{1,2})日.*", rv = "$1年**月**日")
         String date;
+        private int[] ages;
 
-        String idCard;
+        private User(String str) {
+        }
 
         @Empty
         Attach attach;
 
         @Setter
         @Getter
-        static class Attach {
-            @Empty
-            String[] hobbies;
+        class Attach {
+            //@Empty
+            @Mask(type = SensitiveTypeEnum.ADDRESS, show = @Mask.CustomShow(pre = 1, suf = 0))
+            List<String> hobbies;
             //@Regex(pattern = "(\\w{3})\\w+(@qq.com)", rv = "$1***$2")
             @Mask(type = SensitiveTypeEnum.EMAIL)
             String email;
             @Hash(algorithm = Hash.AlgorithmEnum.MD5, salt = "ws@4q#")
             String card;
         }
+    }
+
+    @Setter
+    @Getter
+    static abstract class BasicUser {
+        private String passowrd;
     }
 }

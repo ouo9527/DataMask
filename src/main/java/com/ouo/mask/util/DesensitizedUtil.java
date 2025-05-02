@@ -9,6 +9,7 @@ import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.Digester;
 import cn.hutool.crypto.digest.MD5;
 import com.ouo.mask.annotation.*;
+import com.ouo.mask.enums.ModeEnum;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.rule.*;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +49,7 @@ public abstract class DesensitizedUtil {
         EmptyDesensitizationRule rule = new EmptyDesensitizationRule();
         rule.setScene(annotation.scene());
         rule.setField(fieldName);
+        rule.setMode(ModeEnum.EMPTY);
 
         return emptyDesensitized(scene, rule, fieldName, data);
     }
@@ -95,6 +97,7 @@ public abstract class DesensitizedUtil {
         rule.setField(fieldName);
         rule.setAlgorithm(annotation.algorithm());
         rule.setSalt(annotation.salt());
+        rule.setMode(ModeEnum.HASH);
 
         return desensitized(scene, CollUtil.newArrayList(rule), fieldName, data);
     }
@@ -110,8 +113,8 @@ public abstract class DesensitizedUtil {
      */
     public static String regexDesensitized(SceneEnum scene, RegexDesensitizationRule rule, String fieldName, String data) {
         if (!matches(scene, rule, fieldName, data)) return data;
-        //todo: Java正则特殊符号必须使用2个反斜杠，如：(\\d{3})\\d{4}(\\d{4})
-        //todo: 替换值：$1####$2，如：17788485848脱敏后177####5848
+        //Java正则特殊符号必须使用2个反斜杠，如：(\\d{3})\\d{4}(\\d{4})
+        //替换值：$1####$2，如：17788485848脱敏后177####5848
         if (StrUtil.isNotBlank(rule.getPattern())) {
             return ReUtil.replaceAll(data, rule.getPattern(), rule.getRv());
         }
@@ -134,6 +137,7 @@ public abstract class DesensitizedUtil {
         rule.setField(fieldName);
         rule.setPattern(annotation.pattern());
         rule.setRv(annotation.rv());
+        rule.setMode(ModeEnum.REGEX);
 
         return desensitized(scene, CollUtil.newArrayList(rule), fieldName, data);
     }
@@ -151,7 +155,7 @@ public abstract class DesensitizedUtil {
         if (!matches(scene, rule, fieldName, data)) return data;
         int index = 0;
         String val = data;
-        //todo：前几位
+        //前几位
         List<ReplDesensitizationRule.Posn> posns = rule.getPosns();
         if (null != posns) {
             for (ReplDesensitizationRule.Posn posn : posns) {
@@ -162,7 +166,7 @@ public abstract class DesensitizedUtil {
                 index = i;
             }
         }
-        //todo: 剩余位
+        //剩余位
         ReplDesensitizationRule.Posn surplus = rule.getSurplus();
         if (null != surplus && index < val.length()) {
             return rpv(surplus, val, index, true);
@@ -184,6 +188,7 @@ public abstract class DesensitizedUtil {
         ReplDesensitizationRule rule = new ReplDesensitizationRule();
         rule.setScene(annotation.scene());
         rule.setField(fieldName);
+        rule.setMode(ModeEnum.REPL);
 
         ReplDesensitizationRule.Posn surplus = new ReplDesensitizationRule.Posn();
         if (null != annotation.surplus()) {
@@ -216,6 +221,7 @@ public abstract class DesensitizedUtil {
         rule.setScene(annotation.scene());
         rule.setField(fieldName);
         rule.setType(annotation.type());
+        rule.setMode(ModeEnum.MASK);
 
         if (null != annotation.show()) {
             MaskDesensitizationRule.CustomShow show = new MaskDesensitizationRule.CustomShow();
@@ -355,21 +361,21 @@ public abstract class DesensitizedUtil {
         if (null == scene || CollUtil.isEmpty(rules) || StrUtil.isBlank(fieldName) || StrUtil.isBlank(data)) {
             return data;
         }
-        //todo: 脱敏规则
+        //脱敏规则
         for (DesensitizationRule rule : rules) {
-            if (rule instanceof EmptyDesensitizationRule) {//todo: 置空(脱敏后不等长)
+            if (rule instanceof EmptyDesensitizationRule) {//置空(脱敏后不等长)
                 return emptyDesensitized(scene, (EmptyDesensitizationRule) rule, fieldName, data);
             }
-            if (rule instanceof HashDesensitizationRule) {//todo: HASH(脱敏后不等长)
+            if (rule instanceof HashDesensitizationRule) {//HASH(脱敏后不等长)
                 return hashDesensitized(scene, (HashDesensitizationRule) rule, fieldName, data);
             }
-            if (rule instanceof RegexDesensitizationRule) {//todo: 正则(脱敏后可能不等长)
+            if (rule instanceof RegexDesensitizationRule) {//正则(脱敏后可能不等长)
                 return regexDesensitized(scene, (RegexDesensitizationRule) rule, fieldName, data);
             }
-            if (rule instanceof ReplDesensitizationRule) {//todo: 替换(脱敏后等长)
+            if (rule instanceof ReplDesensitizationRule) {//替换(脱敏后等长)
                 return replDesensitized(scene, (ReplDesensitizationRule) rule, fieldName, data);
             }
-            if (rule instanceof MaskDesensitizationRule) {//todo: 掩盖(脱敏后等长)
+            if (rule instanceof MaskDesensitizationRule) {//掩盖(脱敏后等长)
                 return maskDesensitized(scene, (MaskDesensitizationRule) rule, fieldName, data);
             }
         }
@@ -378,7 +384,7 @@ public abstract class DesensitizedUtil {
     }
 
     /**
-     * todo：位置所对应的值替换
+     * 位置所对应的值替换
      *
      * @param posn
      * @param val
@@ -390,14 +396,14 @@ public abstract class DesensitizedUtil {
         if (null == posn || StrUtil.isEmpty(val)) return val;
         int i = surplus ? val.length() : posn.getI();
         int span = i - index >= val.length() ? val.length() - index : i - index;
-        if (posn.isFixed()) {//todo: 固定值
+        if (posn.isFixed()) {//固定值
             String rv = posn.getRv();
-            if (StrUtil.isNotEmpty(rv)) {//todo：若替换值为空保持原值
-                if (span >= rv.length()) //todo：替换值长度小于所要填充位置时，需填充
+            if (StrUtil.isNotEmpty(rv)) {//若替换值为空保持原值
+                if (span >= rv.length()) //替换值长度小于所要填充位置时，需填充
                     val = StrUtil.replace(val, index, i, StrUtil.repeatByLength(rv, span));
                 else val = StrUtil.replace(val, index, i, StrUtil.subPre(rv, span));
             }
-        } else {//todo: 随机值
+        } else {//随机值
             val = StrUtil.replace(val, index, i, RandomUtil.randomString(span));
         }
         return val;
@@ -414,7 +420,7 @@ public abstract class DesensitizedUtil {
      */
     private static boolean matches(SceneEnum scene, DesensitizationRule rule, String fieldName, String data) {
         log.debug("校验是否不能脱敏：场景={}, 脱敏规则={}, 待脱敏字段={}", scene, rule, fieldName);
-        //todo：通过驼峰匹配
+        //通过驼峰匹配
         return !((StrUtil.isBlank(data) || null == rule || !StrUtil.equals(StringUtil.toCamelCase2(fieldName), StringUtil.toCamelCase2(rule.getField()))
                 || null == scene) || (SceneEnum.ALL != scene && SceneEnum.ALL != rule.getScene() && null != rule.getScene() && scene != rule.getScene()));
     }

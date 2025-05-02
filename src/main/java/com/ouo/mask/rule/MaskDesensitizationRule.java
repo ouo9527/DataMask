@@ -5,17 +5,17 @@ import lombok.Getter;
 import lombok.Setter;
 
 /***********************************************************
- * TODO:     掩盖脱敏规则
+ * 掩盖脱敏规则
  * Author:   刘春
  * Date:     2023/1/29
  ***********************************************************/
 @Getter
 @Setter
 public class MaskDesensitizationRule extends DesensitizationRule {
-    // TODO：敏感类型
+    // 敏感类型
     private SensitiveTypeEnum type;
     /**
-     * TODO：自定义显示，格式：前,后，如前3后4显示（3,4）、前3显示（3）、后4显示（,4）
+     * 自定义显示，格式：前,后，如前3后4显示（3,4）、前3显示（3）、后4显示（,4）
      * 1、姓名：默认自动根据字符长度显示，当长度小于等于2，则显示第1个字符，否则显示前2个字符
      * 2、手机号：大陆-11位、台湾-10位、香港澳门-8位。默认自动根据字符长度显示大陆-前3后4、台湾-前3后3、香港澳门-前2后2
      * 3、固话：由3～4位区号+7～8位固定数字组成。默认自动根据字符长度显示，当区号小于等于3，则显示前3后2，否则前4后2
@@ -30,13 +30,13 @@ public class MaskDesensitizationRule extends DesensitizationRule {
      */
     private CustomShow show;
 
-    //TODO：自定义显示
+    //自定义显示
     @Setter
     @Getter
     public static class CustomShow {
-        // TODO：前几位显示
+        // 前几位显示
         private int pre;
-        // TODO：后几位显示
+        // 后几位显示
         private int suf;
     }
 }

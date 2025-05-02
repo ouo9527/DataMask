@@ -1,7 +1,7 @@
 package com.ouo.mask.enums;
 
 /**
- * todo：敏感类型
+ * 敏感类型
  */
 public enum SensitiveTypeEnum {
     //姓名

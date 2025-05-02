@@ -38,6 +38,7 @@ import java.util.*;
  * 2）@ConfigurationProperties虽可以处理复杂的数据类型，且会将复杂数据类型（无论数组或列表）转成LinkedHashMap，然后再做实际映射处理，但是对于properties和yml文件
  * 中复杂类型做映射处理时，前者无法映射成数组，而后者可以
  * 3）在spring-boot2.0以下，@ConfigurationProperties映射对象原理由PropertiesConfigurationFactory；2.0后由ConfigurationPropertiesBindingPostProcessor
+ * 4）脱敏规则或策略不影响局部的注解脱敏
  */
 @Slf4j
 public class DesensitizationSource {
@@ -63,7 +64,7 @@ public class DesensitizationSource {
      * @return
      */
     public Map<String, List<DesensitizationRule>> getRules() {
-        //todo: 脱敏规则，key：字段，value：规则集
+        //脱敏规则，key：字段，value：规则集
         Map<String, List<DesensitizationRule>> rules = new HashMap<>();
         CollUtil.forEach(this.getDict(DesensitizationSource.RULES).getByPath(DesensitizationSource.RULES, Map.class), (k, v, i) -> {
             final String field = StrUtil.toStringOrNull(k);
@@ -104,7 +105,7 @@ public class DesensitizationSource {
                 }
             }
         }
-        //todo：具体层级的Map
+        //具体层级的Map
         Dict dict = Dict.create();
         CollUtil.forEach(properties, (k, v, i) -> {
             BeanPath.create(StrUtil.toStringOrNull(k)).set(dict, v);
@@ -123,20 +124,20 @@ public class DesensitizationSource {
                 if (StrUtil.isNotBlank(mode)) ((Map) r).put("mode", mode.toUpperCase());
                 if (StrUtil.isNotBlank(scene)) ((Map) r).put("scene", scene.toUpperCase());
                 DesensitizationRule dr = null;
-                if (StrUtil.equalsIgnoreCase(mode, ModeEnum.EMPTY.name())) {//todo：置空
+                if (StrUtil.equalsIgnoreCase(mode, ModeEnum.EMPTY.name())) {//置空
                     dr = BeanUtil.toBean(r, EmptyDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.HASH.name())) {//todo：哈希
+                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.HASH.name())) {//哈希
                     String algorithm = MapUtil.getStr((Map) r, "algorithm", "");
                     if (StrUtil.isNotBlank(algorithm)) ((Map) r).put("algorithm", algorithm.toUpperCase());
                     dr = BeanUtil.toBean(r, HashDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REGEX.name())) {//todo：正则
+                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REGEX.name())) {//正则
                     dr = BeanUtil.toBean(r, RegexDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REPL.name())) {//todo：替换
+                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REPL.name())) {//替换
                     Object posns = ((Map) r).get("posns");
-                    //todo：对于springboot yml转properties时，若多层数组嵌套时，会被转成LinkedHashMap
+                    //对于springboot yml转properties时，若多层数组嵌套时，会被转成LinkedHashMap
                     if (posns instanceof Map) ((Map) r).put("posns", CollUtil.newArrayList(((Map) posns).values()));
                     dr = BeanUtil.toBean(r, ReplDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.MASK.name())) {//todo：掩盖
+                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.MASK.name())) {//掩盖
                     String type = MapUtil.getStr((Map) r, "type", "");
                     if (StrUtil.isNotBlank(type)) ((Map) r).put("type", type.toUpperCase());
                     dr = BeanUtil.toBean(r, MaskDesensitizationRule.class);

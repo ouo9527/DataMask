@@ -12,9 +12,9 @@ import org.apache.logging.log4j.message.SimpleMessage;
 import java.util.List;
 
 /***********************************************************
- * TODO:      基于log4j RewritePolicy实现自定义日志格式（
- *  msg模板（{}）替换之前，即只是此时日志总进口，有利于脱敏）
- *  注：1）在类路径（如：resources目录）下创建log4j2.component.properties文件，
+ *  基于log4j RewritePolicy实现自定义日志格式（msg模板（{}）替换之前，即只是此时日志总进口，有利于脱敏）
+ *  注：
+ *  1）在类路径（如：resources目录）下创建log4j2.component.properties文件，
  *  并在改文件中加入Log4jLogEventFactory=xx.xx.Log4jDesensitizedLogEventFactory,会被log4j框架自动加载
  *  2）log4j.xml文件【无需配置】
  *  注意Marker的使用：
@@ -33,7 +33,7 @@ public class Log4jDesensitizedLogEventFactory implements LogEventFactory, LogDes
         try {
             newMessage = new SimpleMessage(this.resolvePlaceholder(loggerName, message.getFormat(), message.getParameters()));
         } catch (RuntimeException e) {
-            //todo: 会引发死循环，从而造成栈溢出
+            //会引发死循环，从而造成栈溢出
             //log.error("从Sping容器中加载DesensitizationRule脱敏规则异常：", e);
         }
         // message.getFormattedMessage()即格式化后message，此时为null

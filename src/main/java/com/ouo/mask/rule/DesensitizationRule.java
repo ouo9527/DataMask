@@ -7,7 +7,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /***********************************************************
- * TODO:     脱敏规则
+ * 脱敏规则
  * Author:   刘春
  * Date:     2023/1/29
  ***********************************************************/
@@ -15,12 +15,12 @@ import lombok.ToString;
 @Getter
 @ToString
 public abstract class DesensitizationRule {
-    //todo：场景
+    //场景
     //@JSONField(serializeFeatures = JSONWriter.Feature.WriteEnumsUsingName)
     protected SceneEnum scene;
-    //todo：字段
+    //字段
     protected String field;
-    //todo：模式
+    //模式
     //@JSONField(serializeFeatures = JSONWriter.Feature.WriteEnumsUsingName)
     protected ModeEnum mode;
 }

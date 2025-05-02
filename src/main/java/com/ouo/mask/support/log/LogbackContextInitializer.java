@@ -17,7 +17,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /***********************************************************
- * TODO:     提供LogbackContextInitializer进行初始化，代替修改logback配置
+ * 提供LogbackContextInitializer进行初始化，代替修改logback配置
  *
  * Author:   刘春
  * Date:     2024/11/18

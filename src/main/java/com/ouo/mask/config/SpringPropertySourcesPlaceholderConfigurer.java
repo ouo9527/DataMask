@@ -9,7 +9,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 
 /***********************************************************
- * TODO:     脱敏规则加载（用于Spring环境，而Springboot环境采用{@link DesensitizationAutoConfiguration}自动加载）
+ * 脱敏规则加载（用于Spring环境，而Springboot环境采用{@link DesensitizationAutoConfiguration}自动加载）
  * Author:   刘春
  * Date:     2023/1/18
  ***********************************************************/

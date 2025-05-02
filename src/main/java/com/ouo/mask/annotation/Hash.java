@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.lang.annotation.*;
 
 /***********************************************************
- * TODO:     Hash脱敏注解
+ * Hash脱敏注解
  *  目前只对CharSequence类型字段有效，若其值为JSON字符串时，该注解失效
  * Author:   刘春
  * Date:     2023/1/29
@@ -16,16 +16,16 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface Hash {
-    // TODO：场景，默认：WEB和LOG
+    // 场景，默认：WEB和LOG
     SceneEnum scene() default SceneEnum.ALL;
 
-    //TODO：Hash算法
+    //Hash算法
     AlgorithmEnum algorithm() default AlgorithmEnum.SM3;
 
-    //TODO：盐
+    //盐
     String salt() default "";
 
-    //TODO：Hash算法
+    //Hash算法
     @Getter
     enum AlgorithmEnum {
         SM3(10),

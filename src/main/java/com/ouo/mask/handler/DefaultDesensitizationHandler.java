@@ -3,57 +3,152 @@ package com.ouo.mask.handler;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.*;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
+import com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream;
 import com.ouo.mask.annotation.*;
 import com.ouo.mask.config.DesensitizationSource;
 import com.ouo.mask.enums.SceneEnum;
+import com.ouo.mask.kryo.DesensitizationFieldSerializerFactory;
 import com.ouo.mask.rule.DesensitizationStrategy;
 import com.ouo.mask.util.DesensitizedUtil;
 import com.ouo.mask.util.StringUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
 /***********************************************************
- * TODO:     数据脱敏处理器
+ * 数据脱敏处理器
  * Author:   刘春
  * Date:     2022/12/3
  ***********************************************************/
 @Slf4j
 public class DefaultDesensitizationHandler implements DesensitizationHandler {
 
-    // TODO: 全局脱敏规则
+    private final static String DEFAULT_ROOT_NAME = "_"; // 默认根节点
+    private final static String DEFAULT_START_ROOT_NODE = "<" + DEFAULT_ROOT_NAME + ">"; // 默认开始根节点
+    private final static String DEFAULT_END_ROOT_NODE = "</" + DEFAULT_ROOT_NAME + ">"; // 默认结束根节点
+    private final ThreadLocal<Kryo> kryoThreadLocal;
+    @Setter
+    private ObjectMapper objectMapper;
+    @Setter
+    private XmlMapper xmlMapper;
+    // 全局脱敏规则
     @Setter
     private DesensitizationSource desensitizationSource;
 
-    @Setter
-    private ObjectMapper objectMapper;
+    public DefaultDesensitizationHandler() {
+        /**
+         * ToXmlGenerator.Feature.UNWRAP_ROOT_OBJECT_NODE：用于序列化（对象转 XML）时控制是否生成根节点。默认认启用
+         * DeserializationFeature.UNWRAP_ROOT_VALUE：通常用于反序列化为POJO，而不是JsonNode树模型或Map类型。默认是禁用
+         *
+         * Jackson默认是使用get/set方法进行序列化/反序列化或反射、不支持基础类型包装/解包装
+         */
+        // setSerializationInclusion(JsonInclude.Include.NON_NULL)：全局忽略null的属性序列化
+        // enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)：序列化BigDecimal时不使用科学计数法输出
 
-    @Setter
-    private XmlMapper xmlMapper;
+        this.kryoThreadLocal = ThreadLocal.withInitial(() -> {
+            // Kryo（线程不安全）：copy方法支持transient修饰属性拷贝（但序列化不支持），不支持非静态内部类和只依赖无参构造函数，可以使用objenesis框架的StdInstantiatorStrategy策略解决
+            Kryo kryo = new Kryo();
+            kryo.setReferences(true); // 开启序列化时引用共享（避免死循环）
+            kryo.setCopyReferences(true); // 启用拷贝时引用共享（深拷贝场景）
+            kryo.setRegistrationRequired(false); // 关闭强制注册
+            //kryo.setOptimizedGenerics(true);  // 启用泛型推导即自动推断泛型类型，避免重复写入类信息（需启用优化）（默认开启）
+            // 使用 Objenesis 策略（支持非静态内部类和只依赖无参构造函数）
+            kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 
-    @Override
-    public <T> T desensitized(String context, SceneEnum scene, String fieldName, T data) {
-        // 根据策略进行校验是否支持脱敏
-        if (this.supports(context, data)) {
-            try {
-                return this.desensitized(scene, fieldName, data, null);
-            } catch (RuntimeException e) {
-                log.debug("脱敏异常：", e);
-            }
-        }
-        return data;
+            // kryo.register：自定义序列化器，可以替换DefaultSerializers中定义内置序列化器，但不能替换UnsafeField中定义内置序列化器
+            // kryo.setDefaultSerializer：自定义序列化器，可以替换DefaultSerializers中定义内置序列化器，但不能替换UnsafeField中定义内置序列化器
+            return kryo;
+        });
     }
 
     /**
-     * 在data数据中查找fieldName字段值
+     * 从Jackson中XmlMapper获取xml字符串根节点
+     *
+     * @param xmlParser
+     * @return
+     */
+    private static String getXmlRoot(FromXmlParser xmlParser) {
+        if (null == xmlParser.currentToken()) {
+            // 尝试获取下个Token
+            try {
+                if (xmlParser.nextToken() == JsonToken.START_OBJECT) {
+                    // 反射获取
+                    XmlTokenStream _xmlTokens = (XmlTokenStream) ReflectUtil.getFieldValue(xmlParser, "_xmlTokens");
+                    return _xmlTokens.getLocalName();
+                }
+            } catch (Exception e) {
+                // 获取不到根节点
+                log.debug("获取根节点异常：", e);
+            }
+        }
+        log.debug("Missing name, in state: {}", xmlParser.currentToken());
+        return null;
+    }
+
+    /**
+     * 根据脱敏策略验证是否支持脱敏
+     *
+     * @param context 待脱敏对象所被使用的上下文即在那个类中使用
+     * @return
+     */
+    @Override
+    public boolean supports(String context) {
+        // 若全局脱敏策略不为空
+        if (null != desensitizationSource && null != desensitizationSource.getStrategy()) {
+            // 若无配置脱敏范围或上下文 context 需要在脱敏范围内，则可脱敏
+            DesensitizationStrategy strategy = desensitizationSource.getStrategy();
+            if (ArrayUtil.isNotEmpty(strategy.getPackages()) &&
+                    !StrUtil.startWithAny(context, strategy.getPackages())) return false;
+            // 验证脱敏有效期内不脱敏
+            Date effectDate = strategy.getEffectDate();
+            Date expiryDate = strategy.getExpiryDate();
+            Date currentDate = new Date();
+            // new Date(System.currentTimeMillis() + 1) 是由于执行过快，时间片一样，此时为false
+            return currentDate.before(null == effectDate ? new Date(System.currentTimeMillis() + 1) : effectDate) ||
+                    currentDate.after(null == expiryDate ? new Date(System.currentTimeMillis() + 1) : expiryDate);
+        }
+        return true;
+    }
+
+    @Override
+    public <T> T desensitized(SceneEnum scene, Field field, T data) {
+        // 静态字段属于类属性即类成员共享，若修改后会造成共享不一致问题，其次常量字段即编译时常量，若修改后会造成不可见问题即通过get方法访问和直接访问字段，其值是不一样的，故脱敏都不建议修改
+        if (null == field || null == data || ModifierUtil.isStatic(field)
+                || ModifierUtil.hasModifier(field, ModifierUtil.ModifierType.FINAL)) return data;
+        return this.desensitized(scene, field.getName(), data, Arrays.stream(field.getAnnotations())
+                .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
+                        || a instanceof Repl || a instanceof Mask)
+                .findAny().orElse(null));
+    }
+
+    @Override
+    public <T> T desensitized(SceneEnum scene, String fieldName, T data) {
+        return null == data ? data : this.desensitized(scene, fieldName, data, null);
+    }
+
+    /**
+     * key-data任意类型脱敏
      *
      * @param scene      脱敏场景
      * @param fieldName  待脱敏字段
@@ -62,78 +157,41 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
      * @return 已脱敏数据
      */
     private <T> T desensitized(SceneEnum scene, String fieldName, T data, Annotation annotation) {
-        // TODO: 字符类型进行脱敏
-        if (data instanceof CharSequence) {
-            return (T) this.desensitized(scene, fieldName, (CharSequence) data, annotation);
-        }
-        // TODO: 简单值类型(除字符类型即String、other CharSequenc)不脱敏，包含原始类型、Number、Date、URI、URL、Locale、Class
-        if (null == data || ClassUtil.isSimpleValueType(data.getClass())) {
-            return data;
-        }
-        // TODO: 数组类型循环递归处理
-        if (ArrayUtil.isArray(data)) {
-            // TODO：基础类型的数组不能强转为Object类型数组，而是要转成相应的包装类型
-            return (T) this.desensitized(scene, fieldName, ArrayUtil.wrap(data), annotation);
-        }
-        // TODO: 集合类型循环递归处理
-        if (data instanceof Collection) {
-            return (T) this.desensitized(scene, fieldName, (Collection) data, annotation);
-        }
-        // TODO: 迭代器类型循环递归处理
-        if (data instanceof Iterator) {
-            return (T) this.desensitized(scene, fieldName, (Iterator) data, annotation);
-        }
-        // TODO: 映射类型循环递归处理
-        if (data instanceof Map) {
-            return (T) this.desensitized(scene, fieldName, (Map) data, annotation);
-        }
-        // TODO: XML格式处理
-        /*if (data instanceof Document) {
-            return (T) this.desensitized(scene, fieldName, (Document) data);
-        }*/
-        // TODO: 其他对象类型脱敏处理
-        return this.desensitized(scene, fieldName, data);
-    }
-
-    /**
-     * 其他对象类型脱敏处理：在data数据中查找fieldName字段值
-     *
-     * @param scene     脱敏场景
-     * @param fieldName 待脱敏字段
-     * @param data      待脱敏数据
-     * @return 已脱敏数据
-     */
-    private <T> T desensitized(SceneEnum scene, String fieldName, T data) {
-        try {
-            // TODO: 获取对象中属性是否有脱敏规则注解修饰，当fieldName为空时，表示对象所有字段都需脱敏
-            Field[] fields = ReflectUtil.getFields(data.getClass());
-            // 深拷贝（通过反射+递归，即需要存在无参构造器）
-            T result = (T) ReflectUtil.newInstance(data.getClass()); // SerializeUtil.clone(data); // 深拷贝（通过序列化即需要实现Serializable）
-            if (null == result) return data;
-            Arrays.stream(fields).forEach(f -> {
-                if (null != f) {
-                    Object v = ReflectUtil.getFieldValue(data, f);
-                    if (null != v) {
-                        try {
-                            ReflectUtil.setFieldValue(result, f.getName(), this.desensitized(scene, f.getName(), v,
-                                    Arrays.stream(f.getAnnotations())
-                                            .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
-                                                    || a instanceof Repl || a instanceof Mask)
-                                            .findAny().orElse(null)));
-                        } catch (RuntimeException e) {
-                            log.debug("【{}】对象【{}】字段脱敏异常：", data.getClass().getName(), f.getName(), e);
-                        }
-                    }
+        // 字符类型进行脱敏
+        if ((data instanceof CharSequence)) {
+            if (data instanceof String) {
+                return (T) this.desensitized(scene, fieldName, (String) data, annotation);
+            }
+            // CharSequence的具体类型是否具备String类型参数的构造方法，若具备则可重新创建原对象
+            Constructor<?> constructor = ReflectUtil.getConstructor(data.getClass(), String.class);
+            if (null != constructor) {
+                try {
+                    constructor.setAccessible(true);
+                    return (T) constructor.newInstance(this.desensitized(scene, fieldName, Convert.convert(String.class, data), annotation));
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                    log.debug("String转{}异常：", constructor.getName(), e);
                 }
-            });
-
-            return result;
-
-        } catch (RuntimeException e) {
-            // 安全性约束、字段不存在等原因无法操作字段属性
-            log.debug("【{}】对象脱敏异常：", data.getClass().getName(), e);
+            }
             return data;
         }
+        // 数组类型循环递归处理
+        if (ArrayUtil.isArray(data)) {
+            // 基础类型的数组不能强转为Object类型数组，而是要转成相应的包装类型即使用
+            //Arrays.asList()：基于原数组实现，不支持添加或删除元素，且与原数组共享数据，修改会互相影响
+            //return (T) Convert.convert(data.getClass(), this.desensitized(scene, fieldName, CollUtil.newArrayList(data), annotation));
+            return (T) Convert.convert(data.getClass(), this.desensitized(scene, fieldName, ArrayUtil.wrap(data), annotation));
+        }
+        // 集合类型循环递归处理
+        if (data instanceof Collection) {
+            return (T) this.desensitized(scene, fieldName, (Collection<T>) data, annotation);
+        }
+        // 迭代器类型循环递归处理
+        if (data instanceof Iterator) {
+            return (T) this.desensitized(scene, fieldName, (Iterator<T>) data, annotation);
+        }
+
+        // 其他对象类型脱敏处理
+        return this.desensitizedObject(scene, data);
     }
 
     /**
@@ -144,7 +202,7 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
      * @return 已脱敏数据
      */
     /*private Document desensitized(SceneEnum scene, String fieldName, Document data) {
-        // TODO: 拷贝一份
+        // 拷贝一份
         Document dom = null;
         try {
             dom = DocumentHelper.parseText((data).asXML());
@@ -152,11 +210,11 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
             //log.debug("非法XML：", e);
         }
         if (null != dom && null != desensitizationSource && MapUtil.isNotEmpty(desensitizationSource.getRules())) {
-            // TODO: 获取XML对象中属性是否有脱敏规则注解修饰，当fieldName为空时，表示XML对象所有字段都需脱敏
+            // 获取XML对象中属性是否有脱敏规则注解修饰，当fieldName为空时，表示XML对象所有字段都需脱敏
             Set<String> fields = StrUtil.isBlank(fieldName) ? desensitizationSource.getRules().keySet() : new HashSet<>(1);
             if (CollUtil.isEmpty(fields) && StrUtil.isNotBlank(fieldName)) fields.add(fieldName);
             for (String field : fields) {
-                // TODO: 通过XPath处理，忽略大小写匹配
+                // 通过XPath处理，忽略大小写匹配
                 List<Node> nodes = dom.selectNodes("//*[translate(local-name(), " +
                         "'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') = '"
                         + StrUtil.trimToEmpty(field).toUpperCase() + "']");
@@ -172,130 +230,77 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         return dom;
     }*/
 
-
     /**
-     * 迭代器类型脱敏处理：在data数据中查找fieldName字段值
-     *
-     * @param scene     脱敏场景
-     * @param fieldName 待脱敏字段
-     * @param data      待脱敏数据
-     * @return 已脱敏数据
-     */
-    private Iterator desensitized(SceneEnum scene, String fieldName, Iterator data, Annotation annotation) {
-        // TODO: 拷贝一份
-        final List<Object> copyDatas = new ArrayList<>();
-        while (data.hasNext()) {
-            copyDatas.add(this.desensitized(scene, fieldName, data.next(), annotation));
-        }
-        return copyDatas.iterator();
-    }
-
-    /**
-     * 集合类型脱敏处理：在data数据中查找fieldName字段值
-     *
-     * @param scene     脱敏场景
-     * @param fieldName 待脱敏字段
-     * @param data      待脱敏数据
-     * @return 已脱敏数据
-     */
-    private Collection desensitized(SceneEnum scene, String fieldName, Collection data, Annotation annotation) {
-        // TODO: 拷贝一份
-        /*return (Collection) Collections.synchronizedCollection(data)
-                .parallelStream() // 所传进来的map參数不是线程安全的，并行操作时会存在数据一致性问题。因此需要将线程不安全的map转成线程安全的，如Collections.synchronizedCollection(data)等
-                .map(o -> this.desensitized(scene, fieldName, o, annotation))
-                .collect(data instanceof Set ? Collectors.toSet() : Collectors.toList());*/
-        Collection result = CollUtil.create(data.getClass());
-        for (Object o : data) {
-            result.add(this.desensitized(scene, fieldName, o, annotation));
-        }
-        return result;
-    }
-
-    /**
-     * 数组类型脱敏处理：在data数据中查找fieldName字段值
-     *
-     * @param scene     脱敏场景
-     * @param fieldName 待脱敏字段
-     * @param data      待脱敏数据
-     * @return 已脱敏数据
-     */
-    private Object[] desensitized(SceneEnum scene, String fieldName, Object[] data, Annotation annotation) {
-        // TODO: 拷贝一份
-        // 1万条内使用for处理；1万～10万条之间使用stream流式处理；10万～100万条时，采用parallel多线程并行处理
-        /*return new CopyOnWriteArrayList(data)
-                .parallelStream() // 所传进来的map參数不是线程安全的，并行操作时会存在数据一致性问题。因此需要将线程不安全的map转成线程安全的，如Collections.synchronizedList(data)或new CopyOnWriteArrayList(data)等
-                .map(o -> this.desensitized(scene, fieldName, o, annotation))
-                .toArray();*/
-        List result = new ArrayList(data.length);
-        for (Object o : data) {
-            result.add(this.desensitized(scene, fieldName, o, annotation));
-        }
-        return result.toArray();
-    }
-
-    /**
-     * 映射类型脱敏处理：在data数据中查找fieldName字段值
+     * key-val字符类型脱敏
      *
      * @param scene      脱敏场景
      * @param fieldName  待脱敏字段
-     * @param data       待脱敏数据
+     * @param val        待脱敏数据
      * @param annotation 待脱敏字段注解脱敏规则
      * @return 已脱敏数据
      */
-    private Map desensitized(SceneEnum scene, String fieldName, Map<?, ?> data, Annotation annotation) {
-        // TODO: 拷贝一份
-        /*return Collections.synchronizedMap(data).entrySet()
-                .parallelStream() // 所传进来的map參数不是线程安全的，并行操作时会存在数据一致性问题。因此需要将线程不安全的map转成线程安全的，如Collections.synchronizedMap(data)
-                .filter(o -> null != o.getValue())
-                .map(e -> e.setValue(this.desensitized(scene, StrUtil.toStringOrNull(e.getKey()), e.getValue(), annotation)));return e;})
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));*/
-        Map result = MapUtil.createMap(data.getClass());
-        for (Map.Entry e : data.entrySet()) {
-            result.put(e.getKey(), this.desensitized(scene, StrUtil.toStringOrNull(e.getKey()), e.getValue(), annotation));
-        }
-        return result;
-    }
-
-    /**
-     * 字符类型脱敏处理：在data数据中查找fieldName字段值
-     *
-     * @param scene      脱敏场景
-     * @param fieldName  待脱敏字段
-     * @param data       待脱敏数据
-     * @param annotation 待脱敏字段注解脱敏规则
-     * @return 已脱敏数据
-     */
-    private CharSequence desensitized(SceneEnum scene, String fieldName, CharSequence data, Annotation annotation) {
-        final String val = Convert.convert(String.class, data);
-
+    private String desensitized(SceneEnum scene, String fieldName, String val, Annotation annotation) {
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addDeserializer(String.class, new StdDeserializer<String>(String.class) {
+            @Override
+            public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                return desensitized(scene, p.getParsingContext().inArray() ? fieldName : p.getCurrentName(), p.getValueAsString(), annotation);
+            }
+        });
         if (StringUtil.isTypeJSONArray(val)) {
             try {
-                // TODO: 是否是JSON，若是则转JSON处理
-                return objectMapper.writeValueAsString(this.desensitized(scene, fieldName, objectMapper.readValue(val, List.class), annotation));
+                // 是否是JSON，若是则转JSON处理
+                List<?> jsonArray = objectMapper.copy().registerModule(simpleModule).readValue(val, List.class);
+                if (SceneEnum.LOG.equals(scene)) {
+                    return System.lineSeparator() + objectMapper.writerWithDefaultPrettyPrinter()
+                            .writeValueAsString(jsonArray);
+                }
+                return objectMapper.writeValueAsString(jsonArray);
             } catch (JsonProcessingException e) {
                 log.debug("【{}】JSON脱敏异常：", val, e);
             }
         } else if (StringUtil.isTypeJSONObject(val)) {
             try {
-                // TODO: 是否是JSON，若是则转JSON处理
-                return objectMapper.writeValueAsString(this.desensitized(scene, fieldName, objectMapper.readValue(val, Map.class), annotation));
+                // 是否是JSON，若是则转JSON处理
+                Map<?, ?> jsonMap = objectMapper.copy().registerModule(simpleModule).readValue(val, Map.class);
+                if (SceneEnum.LOG.equals(scene)) {
+                    return System.lineSeparator() + objectMapper.writerWithDefaultPrettyPrinter()
+                            .writeValueAsString(jsonMap);
+                }
+                return objectMapper.writeValueAsString(jsonMap);
             } catch (JsonProcessingException e) {
                 log.debug("【{}】JSON脱敏异常：", val, e);
             }
         } else if (StringUtil.isTypeXml(val)) {
-            try {
-                // TODO: 是否是XML，若是则转XML处理，需去除<?xml version="1.0" encoding="UTF-8"?>时，则调用getRootElement()
-                Map result = this.desensitized(scene, fieldName, xmlMapper.readValue(
-                        "<root>" + ReUtil.replaceAll(val, "(\\s*<\\?xml.*\\?>)?", "") + "</root>", Map.class)
-                        , annotation);
-                String rootNodeName = result.getClass().getSimpleName();
-                return StrUtil.strip(xmlMapper.writeValueAsString(result), "<" + rootNodeName + ">", "</" + rootNodeName + ">");
-            } catch (JsonProcessingException e) {
+            try (FromXmlParser parser = (FromXmlParser) xmlMapper.copy().registerModule(simpleModule).createParser(val)) {
+                String rootName = getXmlRoot(parser);
+                // 包装XML片段
+                if (StrUtil.isBlank(rootName)) {
+                    try {
+                        parser.close();
+                    } catch (IOException e) {
+                        log.debug("【{}】XML片段流关闭异常：", val, e);
+                    }
+                    return desensitized(scene, fieldName, wrapXml(val), annotation);
+                }
+                // 移除XML片段包装(不换行)
+                if (DEFAULT_ROOT_NAME.equals(rootName)) {
+                    return StrUtil.strip(xmlMapper.writer().withRootName(rootName).writeValueAsString(parser.readValueAs(Map.class)),
+                            DEFAULT_START_ROOT_NODE, DEFAULT_END_ROOT_NODE);
+                }
+                Map<?, ?> jsonMap = parser.readValueAs(Map.class);
+                if (SceneEnum.LOG.equals(scene)) {
+                    return System.lineSeparator() + xmlMapper.writer().withDefaultPrettyPrinter()
+                            .withRootName(rootName)
+                            .writeValueAsString(jsonMap);
+                }
+                return xmlMapper.writer().withRootName(rootName).writeValueAsString(jsonMap);
+            } catch (IOException e) {
                 log.debug("【{}】XML脱敏异常：", val, e);
             }
-        } else if (StrUtil.isBlank(fieldName)) return data;
+        } else if (StrUtil.isBlank(fieldName)) return val;
 
-        // TODO: 根据注解脱敏规则进行局部且精确脱敏
+        // 根据注解脱敏规则进行局部且精确脱敏
         if (annotation instanceof Empty)
             return DesensitizedUtil.emptyDesensitized(scene, (Empty) annotation,
                     fieldName, val);
@@ -311,41 +316,134 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         if (annotation instanceof Mask)
             return DesensitizedUtil.maskDesensitized(scene, (Mask) annotation,
                     fieldName, val);
-        // TODO: 根据配置中全局脱敏规则进行脱敏
-        if (null == desensitizationSource || MapUtil.isEmpty(desensitizationSource.getRules())) return data;
+        // 根据配置中全局脱敏规则进行脱敏
+        if (null == desensitizationSource || MapUtil.isEmpty(desensitizationSource.getRules())) return val;
         // 基于全局且按命名方式匹配脱敏
         String field = StringUtil.toCamelCase2(fieldName);
         return DesensitizedUtil.desensitized(scene, desensitizationSource.getRules().get(field), field, val);
     }
 
+    /**
+     * 迭代器类型脱敏处理：在data数据中查找fieldName字段值
+     *
+     * @param scene     脱敏场景
+     * @param fieldName 待脱敏字段
+     * @param data      待脱敏数据
+     * @return 已脱敏数据
+     */
+    private <T> Iterator<T> desensitized(SceneEnum scene, String fieldName, Iterator<T> data, Annotation annotation) {
+        // 拷贝一份
+        final List<T> copyDatas = new ArrayList<>();
+        while (data.hasNext()) {
+            copyDatas.add(this.desensitized(scene, fieldName, data.next(), annotation));
+        }
+        return copyDatas.iterator();
+    }
 
     /**
-     * todo: 根据脱敏策略验证是否支持脱敏
+     * 集合类型脱敏处理：在data数据中查找fieldName字段值
      *
-     * @param context 待脱敏对象所被使用的上下文即在那个类中使用
-     * @param data    待脱敏数据
+     * @param scene     脱敏场景
+     * @param fieldName 待脱敏字段
+     * @param data      待脱敏数据
+     * @return 已脱敏数据
+     */
+    private <T> Collection<T> desensitized(SceneEnum scene, String fieldName, Collection<T> data, Annotation annotation) {
+        // 拷贝一份
+        /*return (Collection) Collections.synchronizedCollection(data)
+                .parallelStream() // 所传进来的map參数不是线程安全的，并行操作时会存在数据一致性问题。因此需要将线程不安全的map转成线程安全的，如Collections.synchronizedCollection(data)等
+                .map(o -> this.desensitized(scene, fieldName, o, annotation))
+                .collect(data instanceof Set ? Collectors.toSet() : Collectors.toList());*/
+        Collection<T> result = CollUtil.create(data.getClass());
+        for (T o : data) {
+            result.add(this.desensitized(scene, fieldName, o, annotation));
+        }
+        return result;
+    }
+
+    /**
+     * 数组类型脱敏处理
+     *
+     * @param scene     脱敏场景
+     * @param fieldName 待脱敏字段
+     * @param data      待脱敏数据
+     * @return 已脱敏数据
+     */
+    private <T> T[] desensitized(SceneEnum scene, String fieldName, T[] data, Annotation annotation) {
+        // 拷贝一份
+        // 1万条内使用for处理；1万～10万条之间使用stream流式处理；10万～100万条时，采用parallel多线程并行处理
+        /*return new CopyOnWriteArrayList(data)
+                .parallelStream() // 所传进来的map參数不是线程安全的，并行操作时会存在数据一致性问题。因此需要将线程不安全的map转成线程安全的，如Collections.synchronizedList(data)或new CopyOnWriteArrayList(data)等
+                .map(o -> this.desensitized(scene, fieldName, o, annotation))
+                .toArray();*/
+        //ArrayUtil.newArray(data.getClass(), data.length); 不可直接使用
+        T[] vals = (T[]) new Object[data.length];//Arrays.copyOf(data, data.length);
+        for (int i = 0; i < data.length; i++) {
+            vals[i] = this.desensitized(scene, fieldName, data[i], annotation);
+        }
+        return vals; //(T) ArrayUtil.cast(data.getClass(), vals);
+    }
+
+    /**
+     * 映射类型脱敏处理
+     *
+     * @param scene 脱敏场景
+     * @param data  待脱敏数据
+     * @return 已脱敏数据
+     */
+    private Map desensitized(SceneEnum scene, Map<?, ?> data) {
+        // 拷贝一份
+        /*return Collections.synchronizedMap(data).entrySet()
+                .parallelStream() // 所传进来的map參数不是线程安全的，并行操作时会存在数据一致性问题。因此需要将线程不安全的map转成线程安全的，如Collections.synchronizedMap(data)
+                .filter(o -> null != o.getValue())
+                .map(e -> e.setValue(this.desensitized(scene, StrUtil.toStringOrNull(e.getKey()), e.getValue(), annotation)));return e;})
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));*/
+        Map result = MapUtil.createMap(data.getClass());
+        for (Map.Entry e : data.entrySet()) {
+            result.put(e.getKey(), this.desensitized(scene, StrUtil.toStringOrNull(e.getKey()), e.getValue()));
+        }
+        return result;
+    }
+
+    /**
+     * 其他对象类型脱敏处理
+     *
+     * @param scene 脱敏场景
+     * @param data  待脱敏数据
+     * @return 已脱敏数据
+     */
+    private <T> T desensitizedObject(SceneEnum scene, T data) {
+        // 简单值类型(除字符类型即String、other CharSequenc)不脱敏，包含原始类型、Number、Date、URI、URL、Locale、Class
+        if (null == data || ClassUtil.isSimpleValueType(data.getClass())) {
+            return data;
+        }
+        // 映射类型循环递归处理
+        if (data instanceof Map) {
+            return (T) this.desensitized(scene, (Map) data);
+        }
+        // XML格式处理
+        /*if (data instanceof Document) {
+            return (T) this.desensitized(scene, fieldName, (Document) data);
+        }*/
+        try {
+            Kryo kryo = kryoThreadLocal.get();
+            kryo.setDefaultSerializer(new DesensitizationFieldSerializerFactory(scene));
+            return kryo.copy(data);
+        } finally {
+            kryoThreadLocal.remove();
+        }
+    }
+
+    /**
+     * 包装XML或XML片段
+     * @param xml
      * @return
      */
-    @Override
-    public <T> boolean supports(String context, T data) {
-        if (null == data) return false;
-        // TODO: 是否为简单值类型除字符串外，则不脱敏，其实脱敏针对字符串类型
-        if (!(data instanceof CharSequence) && ClassUtil.isSimpleValueType(data.getClass())) return false;
-
-        // TODO: 若全局脱敏策略不为空
-        if (null != desensitizationSource && null != desensitizationSource.getStrategy()) {
-            // TODO: 若无配置脱敏范围或上下文 context 需要在脱敏范围内，则可脱敏
-            DesensitizationStrategy strategy = desensitizationSource.getStrategy();
-            if (ArrayUtil.isNotEmpty(strategy.getPackages()) &&
-                    !StrUtil.startWithAny(context, strategy.getPackages())) return false;
-            // TODO: 验证脱敏有效期内不脱敏
-            Date effectDate = strategy.getEffectDate();
-            Date expiryDate = strategy.getExpiryDate();
-            Date currentDate = new Date();
-            // TODO: new Date(System.currentTimeMillis() + 1) 是由于执行过快，时间片一样，此时为false
-            return currentDate.before(null == effectDate ? new Date(System.currentTimeMillis() + 1) : effectDate) ||
-                    currentDate.after(null == expiryDate ? new Date(System.currentTimeMillis() + 1) : expiryDate);
-        }
-        return true;
+    private String wrapXml(String xml) {
+        return new StrBuilder()
+                .append(DEFAULT_START_ROOT_NODE)
+                .append(ReUtil.replaceAll(xml, "(\\s*<\\?xml.*\\?>)?", ""))
+                .append(DEFAULT_END_ROOT_NODE)
+                .toString();
     }
 }

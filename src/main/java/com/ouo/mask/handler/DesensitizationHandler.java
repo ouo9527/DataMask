@@ -2,30 +2,51 @@ package com.ouo.mask.handler;
 
 import com.ouo.mask.enums.SceneEnum;
 
+import java.lang.reflect.Field;
+
 /***********************************************************
- * TODO:     脱敏处理器
+ * 脱敏处理器
  * Author:   刘春
  * Date:     2023/1/29
  ***********************************************************/
 public interface DesensitizationHandler {
 
     /**
-     * todo: 根据脱敏策略验证是否支持脱敏
+     * 根据脱敏策略验证是否支持脱敏
      *
      * @param context 待脱敏对象所被使用的上下文即在那个类中使用
-     * @param data    待脱敏数据
      * @return
      */
-    <T> boolean supports(String context, T data);
+    boolean supports(String context);
 
     /**
-     * todo： 在上下文内按照场景进行数据脱敏
+     *  按照场景进行key-val、key-vals或data对象数据脱敏
      *
-     * @param context   待脱敏对象所被使用的上下文即在那个类中使用
-     * @param scene     场景
-     * @param fieldName 待脱敏字段，若不为空，则在待脱敏数据中查找该字段并脱敏，否则脱敏整个待脱敏数据
-     * @param data      待脱敏的数据
+     * @param scene         场景
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏的集合数据
      * @return 返回已脱敏数据
      */
-    <T> T desensitized(String context, SceneEnum scene, String fieldName, T data);
+    <T> T desensitized(SceneEnum scene, String fieldName, T data);
+
+    /**
+     *  按照场景进行单个key-val或key-vals数据脱敏
+     *
+     * @param scene         场景
+     * @param field         待脱敏字段
+     * @param data           待脱敏的数据
+     * @return 返回已脱敏数据
+     */
+    <T> T desensitized(SceneEnum scene, Field field, T data);
+
+    /**
+     * 按照场景进行Java Bean或Map数据脱敏
+     *
+     * @param scene 场景
+     * @param data  待脱敏的Java Bean或Map数据
+     * @return 返回已脱敏Java Bean或Map数据
+     */
+    default <T> T desensitized(SceneEnum scene, T data) {
+        return this.desensitized(scene, (String) null, data);
+    }
 }

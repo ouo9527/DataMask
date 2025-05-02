@@ -3,17 +3,17 @@ package com.ouo.mask.enums;
 import lombok.Getter;
 
 /***********************************************************
- * TODO:     脱敏场景
+ * 脱敏场景
  * Author:   刘春
  * Date:     2023/1/29
  ***********************************************************/
 @Getter
 public enum SceneEnum {
-    // TODO: WEB
+    // WEB
     WEB(10),
-    // TODO: LOG
+    // LOG
     LOG(20),
-    // TODO：WEB and LOG
+    // WEB and LOG
     ALL(0);
 
     private int code;

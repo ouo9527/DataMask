@@ -6,7 +6,7 @@ import com.ouo.mask.enums.SensitiveTypeEnum;
 import java.lang.annotation.*;
 
 /***********************************************************
- * TODO:     掩盖脱敏(属于固定值替换一种)注解
+ * 掩盖脱敏(属于固定值替换一种)注解
  *  目前只对CharSequence类型字段有效，若其值为JSON字符串时，该注解失效
  * Author:   刘春
  * Date:     2023/1/29
@@ -16,14 +16,14 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface Mask {
-    // TODO：场景，默认：WEB和LOG
+    // 场景，默认：WEB和LOG
     SceneEnum scene() default SceneEnum.ALL;
 
-    // TODO：敏感类型
+    // 敏感类型
     SensitiveTypeEnum type();
 
     /**
-     * TODO：自定义显示，格式：前,后，如前3后4显示（3,4）、前3显示（3）、后4显示（,4）
+     * 自定义显示，格式：前,后，如前3后4显示（3,4）、前3显示（3）、后4显示（,4）
      * 1、姓名：默认自动根据字符长度显示，当长度小于等于2，则显示第1个字符，否则显示前2个字符
      * 2、手机号：大陆-11位、台湾-10位、香港澳门-8位。默认自动根据字符长度显示大陆-前3后4、台湾-前3后3、香港澳门-前2后2
      * 3、固话：由3～4位区号+7～8位固定数字组成。默认自动根据字符长度显示，当区号小于等于3，则显示前3后2，否则前4后2
@@ -38,14 +38,14 @@ public @interface Mask {
      */
     CustomShow show() default @CustomShow(pre = 0, suf = 0);
 
-    //TODO：自定义显示
+    //自定义显示
     @Target({})
     @Retention(RetentionPolicy.RUNTIME)
     @interface CustomShow {
-        // TODO：前几位显示
+        // 前几位显示
         int pre();
 
-        // TODO：后几位显示
+        // 后几位显示
         int suf();
     }
 }
