@@ -4,7 +4,6 @@ import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.util.Generics;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
-import com.ouo.mask.util.SpringUtil;
 
 import java.lang.reflect.Field;
 
@@ -13,10 +12,10 @@ public class DesensitizationReflectField extends ReflectField {
     private final SceneEnum sceneEnum;
     private final DesensitizationHandler desensitizationHandler;
 
-    DesensitizationReflectField(SceneEnum sceneEnum, Field field, FieldSerializer serializer, Generics.GenericType genericType) {
+    DesensitizationReflectField(SceneEnum sceneEnum, DesensitizationHandler desensitizationHandler, Field field, FieldSerializer serializer, Generics.GenericType genericType) {
         super(field, serializer, genericType);
         this.sceneEnum = sceneEnum;
-        this.desensitizationHandler = SpringUtil.getBean(DesensitizationHandler.class);
+        this.desensitizationHandler = desensitizationHandler; //SpringUtil.getBean(DesensitizationHandler.class);
     }
 
     @Override

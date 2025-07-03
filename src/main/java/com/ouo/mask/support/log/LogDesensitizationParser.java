@@ -38,14 +38,14 @@ public interface LogDesensitizationParser {
             return template;
         }
         SpelExpressionResolver expressionResolver = SpringUtil.getBean(SpelExpressionResolver.class);
-        final Object[] data = desensitizedhandler.desensitized(SceneEnum.LOG, args);
-        return expressionResolver.getValueByLogTemplate(template, new SpelExpressionMetaData(data), (e, i, c) -> {
+        final Object[] results = desensitizedhandler.desensitized(SceneEnum.LOG, args);
+        return expressionResolver.getValueByLogTemplate(template, new SpelExpressionMetaData(results), (e, i, c) -> {
             Object val = null;
             if (StrUtil.isEmpty(e)) { // 只含{}占位符
-                val = i < data.length ? data[i] : "{}";
-            } else if (1 == data.length || i < data.length) { // 当参数仅且只有一个时，则无论多少个占位符，都始终指向该参数取值，否则有效占位符表达式的值为与之对应的参数
-                int n = 1 == data.length ? 0 : i; //索引位
-                Object p = data[n]; // 参数
+                val = i < results.length ? results[i] : "{}";
+            } else if (1 == results.length || i < results.length) { // 当参数仅且只有一个时，则无论多少个占位符，都始终指向该参数取值，否则有效占位符表达式的值为与之对应的参数
+                int n = 1 == results.length ? 0 : i; //索引位
+                Object p = results[n]; // 参数
                 val = BeanUtil.getFieldValue(p, e); // 获取对象属性
                 if (null == val) { // 若获取为空，则判断是否是字符类型
                     try {

@@ -7,16 +7,17 @@ import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.*;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
 import com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.ouo.mask.annotation.*;
 import com.ouo.mask.config.DesensitizationSource;
 import com.ouo.mask.enums.SceneEnum;
@@ -24,9 +25,9 @@ import com.ouo.mask.kryo.DesensitizationFieldSerializerFactory;
 import com.ouo.mask.rule.DesensitizationStrategy;
 import com.ouo.mask.util.DesensitizedUtil;
 import com.ouo.mask.util.StringUtil;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -47,16 +48,16 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
     private final static String DEFAULT_ROOT_NAME = "_"; // 默认根节点
     private final static String DEFAULT_START_ROOT_NODE = "<" + DEFAULT_ROOT_NAME + ">"; // 默认开始根节点
     private final static String DEFAULT_END_ROOT_NODE = "</" + DEFAULT_ROOT_NAME + ">"; // 默认结束根节点
+    // 对象处理
     private final ThreadLocal<Kryo> kryoThreadLocal;
-    @Setter
+    // json处理器
     private ObjectMapper objectMapper;
-    @Setter
+    // xml处理器
     private XmlMapper xmlMapper;
     // 全局脱敏规则
-    @Setter
-    private DesensitizationSource desensitizationSource;
+    private DesensitizationSource source;
 
-    public DefaultDesensitizationHandler() {
+    public DefaultDesensitizationHandler(ObjectMapper objectMapper, XmlMapper xmlMapper, DesensitizationSource source) {
         /**
          * ToXmlGenerator.Feature.UNWRAP_ROOT_OBJECT_NODE：用于序列化（对象转 XML）时控制是否生成根节点。默认认启用
          * DeserializationFeature.UNWRAP_ROOT_VALUE：通常用于反序列化为POJO，而不是JsonNode树模型或Map类型。默认是禁用
@@ -76,10 +77,44 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
             // 使用 Objenesis 策略（支持非静态内部类和只依赖无参构造函数）
             kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 
-            // kryo.register：自定义序列化器，可以替换DefaultSerializers中定义内置序列化器，但不能替换UnsafeField中定义内置序列化器
-            // kryo.setDefaultSerializer：自定义序列化器，可以替换DefaultSerializers中定义内置序列化器，但不能替换UnsafeField中定义内置序列化器
+            // kryo.register：自定义序列化器，可以替换DefaultSerializers中定义内置（基本类型+string类型）序列化器，但不能替换UnsafeField中定义内置序列化器
+            // kryo.setDefaultSerializer：自定义序列化器，可以替换FieldSerializerFactory中定义内置序列化器，如：替换UnsafeField序列化器
+            // kryo.addDefaultSerializer：自定义序列化器，可以替换非register和setDefaultSerializer注册的序列化器，如：StringBuilder、StringBuffer、Map、集合、数组等
             return kryo;
         });
+
+        // 当Jackson启用Afterburner时，性能差不多接近Kryo
+        this.objectMapper = objectMapper.copy();
+        this.xmlMapper = xmlMapper.copy();
+        /*SimpleModule simpleModule = new SimpleModule();
+        // 将&lt;xx>&lt;/xx>转<![CDATA[]]>处理
+        simpleModule.addSerializer(String.class, new StdSerializer<String>(String.class) {
+            @Override
+            public void serialize(String serializable, JsonGenerator gen, SerializerProvider provider) throws IOException {
+                // gen.currentValue() 当前序列化对象
+                JsonStreamContext context = gen.getOutputContext();
+                // 当前字段名称
+                String fieldName = context.getCurrentName();
+                // 父级对象
+                Object parent = context.getParent().getCurrentValue();
+                // 当前字段所属对象
+                Object obj = parent;
+                if (parent instanceof Map) {
+                    obj = ((Map) parent).get(context.getParent().getCurrentName());
+                }
+
+                if (StringUtil.isTypeXml(serializable)) {
+                    gen.writeRawValue("<![CDATA[" + serializable + "]]>");
+                } else {
+                    gen.writeString(serializable);
+                }
+            }
+        });
+        this.xmlMapper.registerModule(simpleModule);*/
+        AfterburnerModule afterburnerModule = new AfterburnerModule();
+        this.objectMapper.registerModule(afterburnerModule);
+        this.xmlMapper.registerModule(afterburnerModule);
+        this.source = source;
     }
 
     /**
@@ -106,6 +141,17 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         return null;
     }
 
+    @Override
+    public <T> T desensitized(SceneEnum scene, Field field, T data) {
+        // 静态字段属于类属性即类成员共享，若修改后会造成共享不一致问题，其次常量字段即编译时常量，若修改后会造成不可见问题即通过get方法访问和直接访问字段，其值是不一样的，故脱敏都不建议修改
+        if (null == field || null == data || ModifierUtil.isStatic(field)
+                || ModifierUtil.hasModifier(field, ModifierUtil.ModifierType.FINAL)) return data;
+        return this.desensitized(scene, field.getName(), data, Arrays.stream(field.getAnnotations())
+                .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
+                        || a instanceof Repl || a instanceof Mask)
+                .findAny().orElse(null));
+    }
+
     /**
      * 根据脱敏策略验证是否支持脱敏
      *
@@ -115,9 +161,9 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
     @Override
     public boolean supports(String context) {
         // 若全局脱敏策略不为空
-        if (null != desensitizationSource && null != desensitizationSource.getStrategy()) {
+        if (null != source && null != source.getStrategy()) {
             // 若无配置脱敏范围或上下文 context 需要在脱敏范围内，则可脱敏
-            DesensitizationStrategy strategy = desensitizationSource.getStrategy();
+            DesensitizationStrategy strategy = source.getStrategy();
             if (ArrayUtil.isNotEmpty(strategy.getPackages()) &&
                     !StrUtil.startWithAny(context, strategy.getPackages())) return false;
             // 验证脱敏有效期内不脱敏
@@ -132,28 +178,17 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
     }
 
     @Override
-    public <T> T desensitized(SceneEnum scene, Field field, T data) {
-        // 静态字段属于类属性即类成员共享，若修改后会造成共享不一致问题，其次常量字段即编译时常量，若修改后会造成不可见问题即通过get方法访问和直接访问字段，其值是不一样的，故脱敏都不建议修改
-        if (null == field || null == data || ModifierUtil.isStatic(field)
-                || ModifierUtil.hasModifier(field, ModifierUtil.ModifierType.FINAL)) return data;
-        return this.desensitized(scene, field.getName(), data, Arrays.stream(field.getAnnotations())
-                .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
-                        || a instanceof Repl || a instanceof Mask)
-                .findAny().orElse(null));
-    }
-
-    @Override
     public <T> T desensitized(SceneEnum scene, String fieldName, T data) {
-        return null == data ? data : this.desensitized(scene, fieldName, data, null);
+        return this.desensitized(scene, fieldName, data, null);
     }
 
     /**
      * key-data任意类型脱敏
      *
-     * @param scene      脱敏场景
-     * @param fieldName  待脱敏字段
-     * @param data       待脱敏数据
-     * @param annotation 待脱敏字段注解脱敏规则
+     * @param scene         脱敏场景
+     * @param fieldName     待脱敏字段
+     * @param data          待脱敏数据
+     * @param annotation    注解式脱敏规则
      * @return 已脱敏数据
      */
     private <T> T desensitized(SceneEnum scene, String fieldName, T data, Annotation annotation) {
@@ -174,6 +209,10 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
             }
             return data;
         }
+        // Jackson 数组类型循环递归处理
+        if (data instanceof ArrayNode) {
+            return (T) this.desensitized(scene, fieldName, (ArrayNode) data, annotation);
+        }
         // 数组类型循环递归处理
         if (ArrayUtil.isArray(data)) {
             // 基础类型的数组不能强转为Object类型数组，而是要转成相应的包装类型即使用
@@ -190,115 +229,71 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
             return (T) this.desensitized(scene, fieldName, (Iterator<T>) data, annotation);
         }
 
-        // 其他对象类型脱敏处理
-        return this.desensitizedObject(scene, data);
+        return this.desensitized(data, scene);
     }
-
-    /**
-     * XML格式脱敏处理：在data数据中查找fieldName字段值
-     * @param scene 脱敏场景
-     * @param fieldName 待脱敏字段
-     * @param data 待脱敏数据
-     * @return 已脱敏数据
-     */
-    /*private Document desensitized(SceneEnum scene, String fieldName, Document data) {
-        // 拷贝一份
-        Document dom = null;
-        try {
-            dom = DocumentHelper.parseText((data).asXML());
-        } catch (DocumentException e) {
-            //log.debug("非法XML：", e);
-        }
-        if (null != dom && null != desensitizationSource && MapUtil.isNotEmpty(desensitizationSource.getRules())) {
-            // 获取XML对象中属性是否有脱敏规则注解修饰，当fieldName为空时，表示XML对象所有字段都需脱敏
-            Set<String> fields = StrUtil.isBlank(fieldName) ? desensitizationSource.getRules().keySet() : new HashSet<>(1);
-            if (CollUtil.isEmpty(fields) && StrUtil.isNotBlank(fieldName)) fields.add(fieldName);
-            for (String field : fields) {
-                // 通过XPath处理，忽略大小写匹配
-                List<Node> nodes = dom.selectNodes("//*[translate(local-name(), " +
-                        "'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') = '"
-                        + StrUtil.trimToEmpty(field).toUpperCase() + "']");
-                //dom.selectNodes("//" + StrUtil.trimToEmpty(entry.getKey()));
-                if (CollUtil.isNotEmpty(nodes)) {
-                    for (Node node : nodes) {
-                        if (null == node) continue;
-                        node.setText(Objects.toString(this.desensitized(scene, field, node.getText(), null), null));
-                    }
-                }
-            }
-        }
-        return dom;
-    }*/
 
     /**
      * key-val字符类型脱敏
      *
-     * @param scene      脱敏场景
-     * @param fieldName  待脱敏字段
-     * @param val        待脱敏数据
-     * @param annotation 待脱敏字段注解脱敏规则
+     * @param scene         脱敏场景
+     * @param fieldName     待脱敏字段
+     * @param val           待脱敏数据
+     * @param annotation    注解式脱敏规则
      * @return 已脱敏数据
      */
     private String desensitized(SceneEnum scene, String fieldName, String val, Annotation annotation) {
-        SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addDeserializer(String.class, new StdDeserializer<String>(String.class) {
-            @Override
-            public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-                return desensitized(scene, p.getParsingContext().inArray() ? fieldName : p.getCurrentName(), p.getValueAsString(), annotation);
-            }
-        });
-        if (StringUtil.isTypeJSONArray(val)) {
-            try {
-                // 是否是JSON，若是则转JSON处理
-                List<?> jsonArray = objectMapper.copy().registerModule(simpleModule).readValue(val, List.class);
+        if (StrUtil.isBlank(val)) return val;
+        boolean isNext = false; // 是否往下
+        try {
+            JsonNode jsonNode = objectMapper.readTree(val);
+            if (jsonNode.isArray() || jsonNode.isObject()) {
+                Object data = this.desensitized(scene, fieldName, jsonNode, annotation);
                 if (SceneEnum.LOG.equals(scene)) {
                     return System.lineSeparator() + objectMapper.writerWithDefaultPrettyPrinter()
-                            .writeValueAsString(jsonArray);
+                            .writeValueAsString(data);
                 }
-                return objectMapper.writeValueAsString(jsonArray);
-            } catch (JsonProcessingException e) {
-                log.debug("【{}】JSON脱敏异常：", val, e);
+                return objectMapper.writeValueAsString(data);
             }
-        } else if (StringUtil.isTypeJSONObject(val)) {
-            try {
-                // 是否是JSON，若是则转JSON处理
-                Map<?, ?> jsonMap = objectMapper.copy().registerModule(simpleModule).readValue(val, Map.class);
-                if (SceneEnum.LOG.equals(scene)) {
-                    return System.lineSeparator() + objectMapper.writerWithDefaultPrettyPrinter()
-                            .writeValueAsString(jsonMap);
-                }
-                return objectMapper.writeValueAsString(jsonMap);
-            } catch (JsonProcessingException e) {
-                log.debug("【{}】JSON脱敏异常：", val, e);
-            }
-        } else if (StringUtil.isTypeXml(val)) {
-            try (FromXmlParser parser = (FromXmlParser) xmlMapper.copy().registerModule(simpleModule).createParser(val)) {
+        } catch (IOException e) {
+            //log.debug("【{}】JSON脱敏异常：", val, e);
+            isNext = true;
+        }
+
+        if (isNext) {
+            try (FromXmlParser parser = (FromXmlParser) xmlMapper.createParser(val)) {
                 String rootName = getXmlRoot(parser);
                 // 包装XML片段
                 if (StrUtil.isBlank(rootName)) {
                     try {
                         parser.close();
                     } catch (IOException e) {
-                        log.debug("【{}】XML片段流关闭异常：", val, e);
+                        //log.debug("【{}】XML片段流关闭异常：", val, e);
                     }
-                    return desensitized(scene, fieldName, wrapXml(val), annotation);
+
+                    String v = wrapXml(val);
+                    return desensitized(scene, fieldName, v, annotation);
                 }
+
+                Object result = this.desensitized(scene, fieldName, (JsonNode) parser.readValueAsTree(), annotation); //parser.readValueAs(Map.class)
+
                 // 移除XML片段包装(不换行)
                 if (DEFAULT_ROOT_NAME.equals(rootName)) {
-                    return StrUtil.strip(xmlMapper.writer().withRootName(rootName).writeValueAsString(parser.readValueAs(Map.class)),
+                    return StrUtil.strip(xmlMapper.writer().withRootName(rootName).writeValueAsString(result),
                             DEFAULT_START_ROOT_NODE, DEFAULT_END_ROOT_NODE);
+
                 }
-                Map<?, ?> jsonMap = parser.readValueAs(Map.class);
                 if (SceneEnum.LOG.equals(scene)) {
                     return System.lineSeparator() + xmlMapper.writer().withDefaultPrettyPrinter()
                             .withRootName(rootName)
-                            .writeValueAsString(jsonMap);
+                            .writeValueAsString(result);
                 }
-                return xmlMapper.writer().withRootName(rootName).writeValueAsString(jsonMap);
+                return xmlMapper.writer().withRootName(rootName).writeValueAsString(result);
             } catch (IOException e) {
-                log.debug("【{}】XML脱敏异常：", val, e);
+                //log.debug("【{}】XML脱敏异常：", val, e);
             }
-        } else if (StrUtil.isBlank(fieldName)) return val;
+        }
+
+        if (StrUtil.isBlank(fieldName)) return val;
 
         // 根据注解脱敏规则进行局部且精确脱敏
         if (annotation instanceof Empty)
@@ -317,27 +312,28 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
             return DesensitizedUtil.maskDesensitized(scene, (Mask) annotation,
                     fieldName, val);
         // 根据配置中全局脱敏规则进行脱敏
-        if (null == desensitizationSource || MapUtil.isEmpty(desensitizationSource.getRules())) return val;
+        if (null == source || MapUtil.isEmpty(source.getRules())) return val;
         // 基于全局且按命名方式匹配脱敏
         String field = StringUtil.toCamelCase2(fieldName);
-        return DesensitizedUtil.desensitized(scene, desensitizationSource.getRules().get(field), field, val);
+        return DesensitizedUtil.desensitized(scene, source.getRules().get(field), field, val);
     }
 
     /**
      * 迭代器类型脱敏处理：在data数据中查找fieldName字段值
      *
-     * @param scene     脱敏场景
-     * @param fieldName 待脱敏字段
-     * @param data      待脱敏数据
+     * @param scene         脱敏场景
+     * @param fieldName     待脱敏字段
+     * @param data          待脱敏数据
+     * @param annotation    注解式脱敏规则
      * @return 已脱敏数据
      */
     private <T> Iterator<T> desensitized(SceneEnum scene, String fieldName, Iterator<T> data, Annotation annotation) {
         // 拷贝一份
-        final List<T> copyDatas = new ArrayList<>();
+        final List<T> results = new ArrayList<>();
         while (data.hasNext()) {
-            copyDatas.add(this.desensitized(scene, fieldName, data.next(), annotation));
+            results.add(this.desensitized(scene, fieldName, data.next(), annotation));
         }
-        return copyDatas.iterator();
+        return results.iterator();
     }
 
     /**
@@ -354,19 +350,20 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                 .parallelStream() // 所传进来的map參数不是线程安全的，并行操作时会存在数据一致性问题。因此需要将线程不安全的map转成线程安全的，如Collections.synchronizedCollection(data)等
                 .map(o -> this.desensitized(scene, fieldName, o, annotation))
                 .collect(data instanceof Set ? Collectors.toSet() : Collectors.toList());*/
-        Collection<T> result = CollUtil.create(data.getClass());
+        Collection<T> results = CollUtil.create(data.getClass());
         for (T o : data) {
-            result.add(this.desensitized(scene, fieldName, o, annotation));
+            results.add(this.desensitized(scene, fieldName, o, annotation));
         }
-        return result;
+        return results;
     }
 
     /**
      * 数组类型脱敏处理
      *
-     * @param scene     脱敏场景
-     * @param fieldName 待脱敏字段
-     * @param data      待脱敏数据
+     * @param scene         脱敏场景
+     * @param fieldName     待脱敏字段
+     * @param data          待脱敏数据
+     * @param annotation    注解式脱敏规则
      * @return 已脱敏数据
      */
     private <T> T[] desensitized(SceneEnum scene, String fieldName, T[] data, Annotation annotation) {
@@ -377,11 +374,11 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                 .map(o -> this.desensitized(scene, fieldName, o, annotation))
                 .toArray();*/
         //ArrayUtil.newArray(data.getClass(), data.length); 不可直接使用
-        T[] vals = (T[]) new Object[data.length];//Arrays.copyOf(data, data.length);
+        T[] results = (T[]) new Object[data.length];//Arrays.copyOf(data, data.length);
         for (int i = 0; i < data.length; i++) {
-            vals[i] = this.desensitized(scene, fieldName, data[i], annotation);
+            results[i] = this.desensitized(scene, fieldName, data[i], annotation);
         }
-        return vals; //(T) ArrayUtil.cast(data.getClass(), vals);
+        return results; //(T) ArrayUtil.cast(data.getClass(), vals);
     }
 
     /**
@@ -400,42 +397,58 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));*/
         Map result = MapUtil.createMap(data.getClass());
         for (Map.Entry e : data.entrySet()) {
-            result.put(e.getKey(), this.desensitized(scene, StrUtil.toStringOrNull(e.getKey()), e.getValue()));
+            if (e.getKey() instanceof CharSequence)
+                result.put(e.getKey(), this.desensitized(scene, StrUtil.toStringOrNull(e.getKey()), e.getValue()));
+            else result.put(e.getKey(), e.getValue());
         }
         return result;
     }
 
     /**
-     * 其他对象类型脱敏处理
+     * Jackson 数组类型脱敏处理
      *
-     * @param scene 脱敏场景
-     * @param data  待脱敏数据
+     * @param scene      脱敏场景
+     * @param fieldName  待脱敏字段
+     * @param nodes      待脱敏数据
+     * @param annotation 注解式脱敏规则
      * @return 已脱敏数据
      */
-    private <T> T desensitizedObject(SceneEnum scene, T data) {
-        // 简单值类型(除字符类型即String、other CharSequenc)不脱敏，包含原始类型、Number、Date、URI、URL、Locale、Class
-        if (null == data || ClassUtil.isSimpleValueType(data.getClass())) {
-            return data;
+    private ArrayNode desensitized(SceneEnum scene, String fieldName, ArrayNode nodes, Annotation annotation) {
+        ArrayNode results = new ArrayNode(objectMapper.getNodeFactory(), nodes.size());
+        for (int i = 0; i < nodes.size(); i++) {
+            JsonNode jsonNode = nodes.get(i);
+            if (jsonNode instanceof TextNode) {
+                results.add(new TextNode(this.desensitized(scene, fieldName, jsonNode.asText(), annotation)));
+            } else results.add(this.desensitized(scene, fieldName, jsonNode, annotation));
         }
-        // 映射类型循环递归处理
-        if (data instanceof Map) {
-            return (T) this.desensitized(scene, (Map) data);
+        return results;
+    }
+
+    /**
+     * Jackson 数组类型脱敏处理
+     *
+     * @param scene 脱敏场景
+     * @param node  待脱敏数据
+     * @return 已脱敏数据
+     */
+    private ObjectNode desensitized(SceneEnum scene, ObjectNode node) {
+        ObjectNode result = new ObjectNode(objectMapper.getNodeFactory());
+        Iterator<Map.Entry<String, JsonNode>> it = node.fields();
+        while (it.hasNext()) {
+            Map.Entry<String, JsonNode> entry = it.next();
+            if (null != entry) {
+                JsonNode jsonNode = entry.getValue();
+                if (jsonNode instanceof TextNode) {
+                    result.set(entry.getKey(), new TextNode(this.desensitized(scene, entry.getKey(), jsonNode.asText())));
+                } else result.set(entry.getKey(), this.desensitized(scene, entry.getKey(), jsonNode));
+            }
         }
-        // XML格式处理
-        /*if (data instanceof Document) {
-            return (T) this.desensitized(scene, fieldName, (Document) data);
-        }*/
-        try {
-            Kryo kryo = kryoThreadLocal.get();
-            kryo.setDefaultSerializer(new DesensitizationFieldSerializerFactory(scene));
-            return kryo.copy(data);
-        } finally {
-            kryoThreadLocal.remove();
-        }
+        return result;
     }
 
     /**
      * 包装XML或XML片段
+     *
      * @param xml
      * @return
      */
@@ -445,5 +458,43 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                 .append(ReUtil.replaceAll(xml, "(\\s*<\\?xml.*\\?>)?", ""))
                 .append(DEFAULT_END_ROOT_NODE)
                 .toString();
+    }
+
+    /**
+     * 其他对象类型脱敏处理
+     *
+     * @param scene 脱敏场景
+     * @param data  待脱敏数据
+     * @return 已脱敏数据
+     */
+    private <T> T desensitized(T data, SceneEnum scene) {
+        // 简单值类型(除字符类型即String、other CharSequenc)不脱敏，包含原始类型、Number、Date、URI、URL、Locale、Class
+        if (null == data || ClassUtil.isSimpleValueType(data.getClass())) {
+            return data;
+        }
+        // 映射类型循环递归处理
+        if (data instanceof Map) {
+            return (T) this.desensitized(scene, (Map) data);
+        }
+        // Jackson Map类型循环递归处理
+        if (data instanceof ObjectNode) {
+            return (T) this.desensitized(scene, (ObjectNode) data);
+        }
+        // XML格式处理
+        if (data instanceof Document) {
+            try {
+                return (T) xmlMapper.readValue(this.desensitized(scene, null, xmlMapper.writeValueAsString(data), null), data.getClass());
+            } catch (JsonProcessingException e) {
+                // 无法转xml
+            }
+        }
+        try {
+            Kryo kryo = kryoThreadLocal.get();
+            // 对象序列化
+            kryo.setDefaultSerializer(new DesensitizationFieldSerializerFactory(scene, this));
+            return kryo.copy(data);
+        } finally {
+            kryoThreadLocal.remove();
+        }
     }
 }

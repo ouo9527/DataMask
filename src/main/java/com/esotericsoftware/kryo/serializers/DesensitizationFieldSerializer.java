@@ -3,6 +3,7 @@ package com.esotericsoftware.kryo.serializers;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.util.Generics;
 import com.ouo.mask.enums.SceneEnum;
+import com.ouo.mask.handler.DesensitizationHandler;
 
 /**
  * 利用Kryo实现对象序列化/反序列化和深拷贝
@@ -27,15 +28,18 @@ import com.ouo.mask.enums.SceneEnum;
 public class DesensitizationFieldSerializer<T> extends FieldSerializer<T> {
 
     private final SceneEnum sceneEnum;
+    private final DesensitizationHandler desensitizationHandler;
 
-    public DesensitizationFieldSerializer(SceneEnum sceneEnum, Kryo kryo, Class type) {
+    public DesensitizationFieldSerializer(SceneEnum sceneEnum, DesensitizationHandler desensitizationHandler, Kryo kryo, Class type) {
         super(kryo, type);
         this.sceneEnum = sceneEnum;
+        this.desensitizationHandler = desensitizationHandler;
     }
 
-    public DesensitizationFieldSerializer(SceneEnum sceneEnum, Kryo kryo, Class type, FieldSerializerConfig config) {
+    public DesensitizationFieldSerializer(SceneEnum sceneEnum, DesensitizationHandler desensitizationHandler, Kryo kryo, Class type, FieldSerializerConfig config) {
         super(kryo, type, config);
         this.sceneEnum = sceneEnum;
+        this.desensitizationHandler = desensitizationHandler;
     }
 
     @Override
@@ -52,15 +56,15 @@ public class DesensitizationFieldSerializer<T> extends FieldSerializer<T> {
     private CachedField proxy(CachedField cachedField) {
         CachedField newCachedField = null;
         if (cachedField instanceof UnsafeField) { // UnsafeField
-            newCachedField = new DesensitizationUnsafeField(sceneEnum, cachedField.getField(), this,
+            newCachedField = new DesensitizationUnsafeField(sceneEnum, desensitizationHandler, cachedField.getField(), this,
                     new Generics.GenericType(cachedField.getField().getDeclaringClass(), super.getType(),
                             cachedField.getField().getGenericType()));
         } else if (cachedField instanceof AsmField) { // AsmField
-            newCachedField = new DesensitizationAsmField(sceneEnum, cachedField.getField(), this,
+            newCachedField = new DesensitizationAsmField(sceneEnum, desensitizationHandler, cachedField.getField(), this,
                     new Generics.GenericType(cachedField.getField().getDeclaringClass(), super.getType(),
                             cachedField.getField().getGenericType()));
         } else if (cachedField instanceof ReflectField) { // ReflectField
-            newCachedField = new DesensitizationReflectField(sceneEnum, cachedField.getField(), this,
+            newCachedField = new DesensitizationReflectField(sceneEnum, desensitizationHandler, cachedField.getField(), this,
                     new Generics.GenericType(cachedField.getField().getDeclaringClass(), super.getType(),
                             cachedField.getField().getGenericType()));
         }

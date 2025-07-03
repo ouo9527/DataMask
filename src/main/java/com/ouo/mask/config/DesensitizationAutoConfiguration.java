@@ -57,12 +57,7 @@ public class DesensitizationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public DesensitizationHandler desensitizationHandler(DesensitizationSource source, ObjectMapper objectMapper, XmlMapper xmlMapper) {
-        DefaultDesensitizationHandler handler = new DefaultDesensitizationHandler();
-        handler.setDesensitizationSource(source);
-        handler.setObjectMapper(objectMapper);
-        handler.setXmlMapper(xmlMapper);
-
-        return handler;
+        return new DefaultDesensitizationHandler(objectMapper, xmlMapper, source);
     }
 
     @Bean
