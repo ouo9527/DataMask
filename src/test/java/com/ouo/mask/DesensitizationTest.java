@@ -11,7 +11,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.ouo.mask.config.DesensitizationAutoConfiguration;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
-import com.ouo.mask.support.log.LogDesensitizationParser;
 import com.ouo.mask.util.StringUtil;
 import com.ouo.mask.vo.User;
 import lombok.extern.slf4j.Slf4j;
@@ -164,7 +163,7 @@ public class DesensitizationTest {
         u.setIdCard(new StrBuilder("6879796065447"));
         data.put("user", u);
 
-        System.out.printf("根据配置进行脱敏：%s\n", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.ALL, u)));
+        System.out.printf("根据配置进行脱敏：%s\n", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.ALL, data)));
 
         User user = new User("");
         user.setName("张王四");
@@ -187,33 +186,19 @@ public class DesensitizationTest {
         attach.setCard("532128199510286631");
         user.setAttach(attach);
 
-        log.info("根据注解&配置进行脱敏：{}", user);
+        System.out.printf("根据注解&配置进行脱敏：%s\n", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.ALL, user)));
 
-        String xml = "<Student> <Name> 李四 </Name> <Phones> <Phone> 13333333311 </Phone> <Phone> &lt;13333333312> </Phone></Phones> <text><![CDATA[<name>张曼玉</name>]]></text> </Student>";
-        log.info("XML字符串脱敏后数据：{}", xml);
-        log.info("测试异常：{name} {e}", "hello", new RuntimeException("123"));
     }
 
     /**
      * 日志脱敏
      */
     @Test
-    public void logDesensitized() {
+    public void desensitizedLog() {
         String template = "转义占位符：\\{}，占位符1：{}，占位符2：{name}，占位符3：{ }，占位符4：{}，占位符5：\\\\{}、占位符7：\\{、占位符8：}\"，占位符9：{}、占位符10：{}"; //占位符6：{、
         Object[] args = new Object[]{"hello", "world", "张思", null};
         log.info(template, args);
         System.out.println("MessageFormatter: " + MessageFormatter.arrayFormat(template, args).getMessage());
-        /*EscapeSpelExpressionParser expressionParser = new EscapeSpelExpressionParser();
-        Expression expression = expressionParser.parseExpression("占位符1:\\{name}、占位符2：{name}、占位符3：{ }、占位符4：{#root}、占位符5：\\\\{}、占位符7：\\{、占位符8：}\"",
-                new TemplateParserContext("{", "}"));
-        if (expression instanceof ExpressionWrap) {
-            log.info("解析spel模板表达式：{}", ((ExpressionWrap) expression).getValue(args, (e, i, c) -> {
-                log.info("所无法解析表达式{}：{}", i, e);
-                return "";
-            }));
-        }*/
-        LogDesensitizationParser desensitizedLog = new LogDesensitizationParser() {
-        };
 
         User user = new User("");
         user.setName("张王四");
@@ -232,16 +217,17 @@ public class DesensitizationTest {
         attach.setEmail("lc123@qq.com");
         attach.setCard("532128199510286631");
         user.setAttach(attach);
-        log.info("日志模板解析：{}", desensitizedLog.resolvePlaceholder(this.getClass().getSimpleName(), template, args));
-        log.info("日志脱敏格式1(只含一个参数，多个占位符或占位符spel表达式)：{}", desensitizedLog.resolvePlaceholder("com.ouo.mask",
-                "无表达式={}、不规范spel模板表达式={name}、符合规范spel表达式1={#p0.phone}、符合规范spel表达式2={args[0].bankCard}", new Object[]{user}));
+        log.info("日志脱敏格式1(只含一个参数，多个占位符或占位符spel表达式)：无表达式={}、不规范spel模板表达式={name}、符合规范spel表达式1={#p0.phone}、符合规范spel表达式2={args[0].bankCard}",
+                user);
 
-        log.info("日志脱敏表达式2(多个参数，多个占位符或占位符spel表达式)：{}", desensitizedLog.resolvePlaceholder("com.ouo.mask",
-                "用户名={name}、电话号码={#p0.phone}，{}", new Object[]{user, "{\"phone\":\"1772285144\"}", "<?xml version=\"1.0\" ?><name>张三丰</name>"}));
+        log.info("日志脱敏表达式2(多个参数，多个占位符或占位符spel表达式)：用户名={name}、电话号码={#p0.phone}，{}",
+                user, "{\"phone\":\"17722657194\"}", "<?xml version=\"1.0\" ?><name>张三丰</name>");
 
-        log.info("日志脱敏格式3(只含占位符即不含占位符spel表达式，参数个数多余有效占位符)：{}", desensitizedLog.resolvePlaceholder("com.ouo.mask",
-                "转义占位符(此时占位符属于无效)=\\{}、用户名={}、电话号码={}", new Object[]{user.getAddr(), user.getName(), user.getPhone()}));
-        log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}", desensitizedLog.resolvePlaceholder("com.ouo.mask",
-                "{}、用户名={name}、电话号码={Phone}、{}、{}", new Object[]{user.getAddr(), user.getName(), user.getPhone(), null}));
+        log.info("日志脱敏格式3(只含占位符即不含占位符spel表达式，参数个数多余有效占位符)：转义占位符(此时占位符属于无效)=\\{}、用户名={}、电话号码={}",
+                user.getAddr(), user.getName(), user.getPhone());
+        log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
+                user.getAddr(), user.getName(), user.getPhone(), null);
+
+        log.info("日志脱敏格式5(参数含异常对象)：{name} {e}", "hello", new RuntimeException("123"));
     }
 }

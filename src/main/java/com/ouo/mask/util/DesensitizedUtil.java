@@ -285,6 +285,10 @@ public abstract class DesensitizedUtil {
                     return StrUtil.hide(data, pre, len - suf);
                 }
                 case ID_CARD:
+                    // 香港（8～9位）、澳门（7～8位）
+                    if (10 > len) return StrUtil.hide(data, 0, len - 2);
+                    // 台湾（10位）
+                    if (10 == len) return StrUtil.hide(data, 2, len - 3);
                     return StrUtil.hide(data, 3, len - 4);
                 case ADDRESS: {
                     List<String> addrs = ReUtil.getAllGroups(Pattern.compile("(.+省)?(.+市)?(.+自治区)?(.+行政区)?(.+县)?(.+区)?.+"), data, false);
@@ -332,7 +336,11 @@ public abstract class DesensitizedUtil {
                 case CAR_LICENSE:
                     return StrUtil.hide(data, 2, len - 2);
                 case BANK_CARD:
-                    return StrUtil.hide(data, 6, len - 4);
+                    // 银联信用卡/Visa/Mastercard 标准信用卡/部分借记卡（一般16位）、极少数借记卡（17位）、银联借记卡（一般18～19位）、美国运通卡（AmEx）（15位）、部分Visa旧版卡（一般13～14位）
+                    // 联名卡/预付卡或虚拟卡（19位以上）
+                    if (16 <= len) StrUtil.hide(data, 6, len - 4);
+                    if (16 > len && 13 <= len) StrUtil.hide(data, 4, len - 4);
+                    return StrUtil.hide(data, 2, len - 2);
                 case PASSPORT:
                     return StrUtil.hide(data, 1, len - 3);
                 case NUMBER:
