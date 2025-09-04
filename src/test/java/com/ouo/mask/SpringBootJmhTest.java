@@ -3,7 +3,6 @@ package com.ouo.mask;
 import cn.hutool.core.text.StrBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ouo.mask.config.DesensitizationAutoConfiguration;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
 import com.ouo.mask.vo.User;

@@ -1,5 +1,6 @@
 package com.ouo.mask.config;
 
+import com.ouo.mask.DesensitizationAutoConfiguration;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;

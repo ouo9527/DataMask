@@ -1,4 +1,4 @@
-package com.ouo.mask.rule;
+package com.ouo.mask.properties;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ArrayUtil;

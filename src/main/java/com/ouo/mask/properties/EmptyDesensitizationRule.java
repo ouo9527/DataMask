@@ -1,4 +1,4 @@
-package com.ouo.mask.rule;
+package com.ouo.mask.properties;
 
 /***********************************************************
  * 置空脱敏规则

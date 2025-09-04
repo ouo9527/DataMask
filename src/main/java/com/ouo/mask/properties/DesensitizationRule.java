@@ -1,4 +1,4 @@
-package com.ouo.mask.rule;
+package com.ouo.mask.properties;
 
 import com.ouo.mask.enums.ModeEnum;
 import com.ouo.mask.enums.SceneEnum;

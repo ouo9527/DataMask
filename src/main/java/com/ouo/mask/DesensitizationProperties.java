@@ -1,4 +1,4 @@
-package com.ouo.mask.config;
+package com.ouo.mask;
 
 import cn.hutool.core.bean.BeanPath;
 import cn.hutool.core.bean.BeanUtil;
@@ -8,7 +8,7 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.ouo.mask.enums.ModeEnum;
 import com.ouo.mask.enums.SceneEnum;
-import com.ouo.mask.rule.*;
+import com.ouo.mask.properties.*;
 import com.ouo.mask.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,7 @@ import java.util.*;
  * 4）脱敏规则或策略不影响局部的注解脱敏
  */
 @Slf4j
-public class DesensitizationSource {
+public class DesensitizationProperties {
     public static final String PREFIX = "ouo.desensitization";
     public static final String RULES = PREFIX + ".rules";
     public static final String STRATEGY = PREFIX + ".strategy";
@@ -55,7 +55,7 @@ public class DesensitizationSource {
      * @return
      */
     public DesensitizationStrategy getStrategy() {
-        return this.getDict(DesensitizationSource.STRATEGY).getByPath(DesensitizationSource.STRATEGY, DesensitizationStrategy.class);
+        return this.getDict(DesensitizationProperties.STRATEGY).getByPath(DesensitizationProperties.STRATEGY, DesensitizationStrategy.class);
     }
 
     /**
@@ -66,14 +66,14 @@ public class DesensitizationSource {
     public Map<String, List<DesensitizationRule>> getRules() {
         //脱敏规则，key：字段，value：规则集
         Map<String, List<DesensitizationRule>> rules = new HashMap<>();
-        CollUtil.forEach(this.getDict(DesensitizationSource.RULES).getByPath(DesensitizationSource.RULES, Map.class), (k, v, i) -> {
+        CollUtil.forEach(this.getDict(DesensitizationProperties.RULES).getByPath(DesensitizationProperties.RULES, Map.class), (k, v, i) -> {
             final String field = StrUtil.toStringOrNull(k);
             if (v instanceof List) {
                 rules.put(StringUtil.toCamelCase2(field), convert(field, (List) v));
             } else if (v instanceof Map) {
                 rules.put(StringUtil.toCamelCase2(field), convert(field, CollUtil.newArrayList(((Map) v).values())));
             } else log.debug("{}.{}: This does not comply with the desensitization rules.",
-                    DesensitizationSource.RULES, field);
+                    DesensitizationProperties.RULES, field);
         });
 
         return rules;
@@ -143,7 +143,7 @@ public class DesensitizationSource {
                     dr = BeanUtil.toBean(r, MaskDesensitizationRule.class);
                 } else {
                     log.debug("{}.{}[{}]: mode={} is not within the range of [empty,hash,regex,replace,mask]",
-                            DesensitizationSource.RULES, field, i, mode);
+                            DesensitizationProperties.RULES, field, i, mode);
                 }
 
                 if (null != dr) {

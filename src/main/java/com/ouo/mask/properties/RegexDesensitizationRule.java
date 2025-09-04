@@ -1,4 +1,4 @@
-package com.ouo.mask.rule;
+package com.ouo.mask.properties;
 
 import lombok.Getter;
 import lombok.Setter;

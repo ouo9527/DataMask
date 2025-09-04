@@ -1,4 +1,4 @@
-package com.ouo.mask.rule;
+package com.ouo.mask.properties;
 
 import com.ouo.mask.annotation.Hash;
 import lombok.Getter;

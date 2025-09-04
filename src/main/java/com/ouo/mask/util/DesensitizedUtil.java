@@ -11,7 +11,7 @@ import cn.hutool.crypto.digest.MD5;
 import com.ouo.mask.annotation.*;
 import com.ouo.mask.enums.ModeEnum;
 import com.ouo.mask.enums.SceneEnum;
-import com.ouo.mask.rule.*;
+import com.ouo.mask.properties.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;

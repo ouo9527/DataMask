@@ -7,10 +7,13 @@ import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.*;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -18,11 +21,11 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
 import com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.ouo.mask.DesensitizationProperties;
 import com.ouo.mask.annotation.*;
-import com.ouo.mask.config.DesensitizationSource;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.kryo.DesensitizationFieldSerializerFactory;
-import com.ouo.mask.rule.DesensitizationStrategy;
+import com.ouo.mask.properties.DesensitizationStrategy;
 import com.ouo.mask.util.DesensitizedUtil;
 import com.ouo.mask.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -55,9 +58,9 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
     // xml处理器
     private XmlMapper xmlMapper;
     // 全局脱敏规则
-    private DesensitizationSource source;
+    private DesensitizationProperties desensitizationProperties;
 
-    public DefaultDesensitizationHandler(ObjectMapper objectMapper, XmlMapper xmlMapper, DesensitizationSource source) {
+    public DefaultDesensitizationHandler(DesensitizationProperties desensitizationProperties) {
         /**
          * ToXmlGenerator.Feature.UNWRAP_ROOT_OBJECT_NODE：用于序列化（对象转 XML）时控制是否生成根节点。默认认启用
          * DeserializationFeature.UNWRAP_ROOT_VALUE：通常用于反序列化为POJO，而不是JsonNode树模型或Map类型。默认是禁用
@@ -84,8 +87,8 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         });
 
         // 当Jackson启用Afterburner时，性能差不多接近Kryo
-        this.objectMapper = objectMapper.copy();
-        this.xmlMapper = xmlMapper.copy();
+        this.objectMapper = new ObjectMapper();
+        this.xmlMapper = new XmlMapper();
         /*SimpleModule simpleModule = new SimpleModule();
         // 将&lt;xx>&lt;/xx>转<![CDATA[]]>处理
         simpleModule.addSerializer(String.class, new StdSerializer<String>(String.class) {
@@ -112,9 +115,18 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         });
         this.xmlMapper.registerModule(simpleModule);*/
         AfterburnerModule afterburnerModule = new AfterburnerModule();
-        this.objectMapper.registerModule(afterburnerModule);
-        this.xmlMapper.registerModule(afterburnerModule);
-        this.source = source;
+        this.objectMapper
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // 反序列化时，自动忽略未知字段即不存在于目标类中的字段
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // 序列化时，是否对无属性的空对象抛异常
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
+                .registerModule(afterburnerModule);
+
+        this.xmlMapper
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // 反序列化时，自动忽略未知字段即不存在于目标类中的字段
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // 序列化时，是否对无属性的空对象抛异常
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
+                .registerModule(afterburnerModule);
+        this.desensitizationProperties = desensitizationProperties;
     }
 
     /**
@@ -161,9 +173,9 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
     @Override
     public boolean supports(String context) {
         // 若全局脱敏策略不为空
-        if (null != source && null != source.getStrategy()) {
+        if (null != desensitizationProperties && null != desensitizationProperties.getStrategy()) {
             // 若无配置脱敏范围或上下文 context 需要在脱敏范围内，则可脱敏
-            DesensitizationStrategy strategy = source.getStrategy();
+            DesensitizationStrategy strategy = desensitizationProperties.getStrategy();
             if (ArrayUtil.isNotEmpty(strategy.getPackages()) &&
                     !StrUtil.startWithAny(context, strategy.getPackages())) return false;
             // 验证脱敏有效期内不脱敏
@@ -312,10 +324,10 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
             return DesensitizedUtil.maskDesensitized(scene, (Mask) annotation,
                     fieldName, val);
         // 根据配置中全局脱敏规则进行脱敏
-        if (null == source || MapUtil.isEmpty(source.getRules())) return val;
+        if (null == desensitizationProperties || MapUtil.isEmpty(desensitizationProperties.getRules())) return val;
         // 基于全局且按命名方式匹配脱敏
         String field = StringUtil.toCamelCase2(fieldName);
-        return DesensitizedUtil.desensitized(scene, source.getRules().get(field), field, val);
+        return DesensitizedUtil.desensitized(scene, desensitizationProperties.getRules().get(field), field, val);
     }
 
     /**

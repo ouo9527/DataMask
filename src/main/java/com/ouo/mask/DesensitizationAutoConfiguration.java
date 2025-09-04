@@ -1,7 +1,5 @@
-package com.ouo.mask.config;
+package com.ouo.mask;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.ouo.mask.handler.DefaultDesensitizationHandler;
 import com.ouo.mask.handler.DesensitizationHandler;
 import com.ouo.mask.spel.ExpressionResolver;
@@ -23,7 +21,7 @@ import org.springframework.context.annotation.Import;
  * Date:     2023/1/17
  ***********************************************************/
 @Configuration
-@ConditionalOnProperty(prefix = DesensitizationSource.PREFIX, name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = DesensitizationProperties.PREFIX, name = "enabled", havingValue = "true")
 @Import({SpringUtil.class, DesensitizationResponseBodyAdvice.class})
 //@EnableConfigurationProperties({DesensitizationProperties.class})
 //@RefreshScope //springcloud刷新@Value注解属性
@@ -36,28 +34,15 @@ public class DesensitizationAutoConfiguration {
         new LogbackContextInitializer().initialize();
     }
 
-
     @Bean
-    @ConditionalOnMissingBean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+    public DesensitizationProperties desensitizationProperties() {
+        return new DesensitizationProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public XmlMapper xmlMapper() {
-        return new XmlMapper();
-    }
-
-    @Bean
-    public DesensitizationSource desensitizationProperties() {
-        return new DesensitizationSource();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public DesensitizationHandler desensitizationHandler(DesensitizationSource source, ObjectMapper objectMapper, XmlMapper xmlMapper) {
-        return new DefaultDesensitizationHandler(objectMapper, xmlMapper, source);
+    public DesensitizationHandler desensitizationHandler() {
+        return new DefaultDesensitizationHandler(desensitizationProperties());
     }
 
     @Bean
