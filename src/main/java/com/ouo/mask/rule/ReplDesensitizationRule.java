@@ -1,5 +1,6 @@
-package com.ouo.mask.properties;
+package com.ouo.mask.rule;
 
+import com.ouo.mask.enums.ModeEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,6 +18,10 @@ public class ReplDesensitizationRule extends DesensitizationRule {
     private List<Posn> posns;
     // 剩余位置替换
     private Posn surplus;
+
+    public ReplDesensitizationRule() {
+        this.mode = ModeEnum.REPL;
+    }
 
     //位置属性
     @Setter

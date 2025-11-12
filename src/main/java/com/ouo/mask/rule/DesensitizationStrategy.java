@@ -1,4 +1,4 @@
-package com.ouo.mask.properties;
+package com.ouo.mask.rule;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ArrayUtil;
@@ -22,6 +22,10 @@ public class DesensitizationStrategy {
     private String effectDate;
     //到期日
     private String expiryDate;
+
+    public void setPackages(String packages) {
+        this.packages = StrUtil.splitToArray(packages, ",");
+    }
 
     public void setPackages(String[] packages) {
         this.packages = ArrayUtil.edit(packages, str -> StrUtil.trimToEmpty(str));

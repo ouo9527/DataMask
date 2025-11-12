@@ -6,8 +6,6 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.text.StrBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
 import com.ouo.mask.util.StringUtil;
@@ -35,19 +33,11 @@ import org.yaml.snakeyaml.Yaml;*/
 @Slf4j
 //Junit4需要@RunWith(SpringRunner.class)+@SpringBootTest配置合；而Junit5不需要@RunWith
 //@RunWith(SpringRunner.class)
-@SpringBootTest(classes = DesensitizationAutoConfiguration.class/*, properties = {"classpath*:application.yml"}*/)
+@SpringBootTest(classes = {DesensitizationAutoConfiguration.class}/*, rule = {"classpath*:application.yml"}*/)
 public class DesensitizationTest {
 
     @Autowired
     private DesensitizationHandler handler;
-
-    //@MockBean
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    //@MockBean
-    @Autowired
-    private XmlMapper xmlMapper;
 
     /**
      * 转驼峰命名测试
@@ -87,7 +77,7 @@ public class DesensitizationTest {
                 .forEach(entry -> {
                     BeanPath.create(entry.getKey().toString()).set(dict, entry.getValue());
                 });
-        log.info("Properties->Dict：{}", objectMapper.writeValueAsString(dict));
+        log.info("Properties->Dict：{}", dict);
     }
 
     /**
@@ -162,7 +152,7 @@ public class DesensitizationTest {
         u.setIdCard(new StrBuilder("6879796065447"));
         data.put("user", u);
 
-        System.out.printf("根据配置进行脱敏：%s\n", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.ALL, data)));
+        System.out.printf("根据配置进行脱敏：%s\n", handler.desensitized(SceneEnum.ALL, data));
 
         User user = new User("");
         user.setName("张王四");
@@ -185,7 +175,7 @@ public class DesensitizationTest {
         attach.setCard("532128199510286631");
         user.setAttach(attach);
 
-        System.out.printf("根据注解&配置进行脱敏：%s\n", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.ALL, user)));
+        System.out.printf("根据注解&配置进行脱敏：%s\n", handler.desensitized(SceneEnum.ALL, user));
 
     }
 

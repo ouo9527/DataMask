@@ -77,22 +77,26 @@
 
 ```yaml
 ouo:
-  desensitization:
+  desens:
     #启动脱敏
     enabled: true
-    #脱敏范围即配置包路径，多个值时以英文逗号隔开；为了减少不必要的数据脱敏，否则会影响系统性能，因此推荐设置。默认：空，当为空时，会扫描全部类
-    #scan: xx.xx,yy.yy
-    #脱敏规则列表
+    #脱敏策略
+    strategy:
+      #脱敏范围即配置包路径，多个值时以英文逗号隔开；为了减少不必要的数据脱敏，否则会影响系统性能，因此推荐设置。默认：空，当为空时，会扫描全部类
+      packages: xx.xx,yy.yy
+      #effect-date:
+      #expiry-date:
+    #字段敏规则
     rules:
       #字段名
-      - field: name
+      field1:
         #脱敏模式：置空empty、哈希hash、正则regex、替换replace、掩盖mask
         mode: mask
         #脱敏场景：日志log、网页web、全部all，默认all
         scene: log
         #敏感类型，采用内置脱敏配置
         type: full_name
-      - field: phone
+      field2: 
         mode: replace
         scene: all
         posns:
@@ -104,17 +108,18 @@ ouo:
             rv: "#"
         #剩余位置
         surplus:
-          fixed: false
-      - field: id_card
+          fixed: false    
+      field3: 
         mode: hash
         scene: web
         #算法
         algorithm: sm3
         #盐
         salt: grvyw$2
-      - field: addr
+      field4: 
         mode: empty
-      - field: ip
+      # 如ip  
+      field5: 
         mode: regex
         #正则表达式
         pattern: (\\d{3})\\d{4}(\\d{4})

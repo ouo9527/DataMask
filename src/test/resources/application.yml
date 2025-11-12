@@ -1,49 +1,48 @@
 ouo:
-  desensitization:
+  desens:
     #启动脱敏
     enabled: true
+    # 脱敏策略
     strategy:
       #脱敏范围即配置包路径，多个值时以英文逗号隔开；为了减少不必要的数据脱敏，否则会影响系统性能，因此推荐设置。默认：空，当为空时，会扫描全部类
       #packages: xx.xx,yy.yy
-      packages: com.ouo.mask
+      packages: com.ouo.mask,xx.yy
       #effect-date:
       #expiry-date:
-    #脱敏规则列表
+    #字段敏规则
     rules:
-      test:
+      addr:
         mode: empty
       #字段名
       name:
         #脱敏模式：置空empty、哈希hash、正则regex、替换repl、掩盖mask
-        - mode: mask
-          #脱敏场景：日志log、网页web、全部all，默认all
-          scene: log
-          #敏感类型，采用内置脱敏配置
-          type: full_name
+        mode: mask
+        #脱敏场景：日志log、网页web、全部all，默认all
+        scene: log
+        #敏感类型，采用内置脱敏配置
+        type: full_name
       phone:
-        - mode: repl
-          scene: all
-          posns:
-            - i: 3
-            - i: 8
-              #是否固定值，默认true，false为随机值
-              fixed: true
-              #替换值
-              rv: "#"
-          #剩余位置
-          surplus:
-            fixed: false
+        mode: repl
+        scene: all
+        posns:
+          - i: 3
+          - i: 8
+            #是否固定值，默认true，false为随机值
+            fixed: true
+            #替换值
+            rv: "#"
+        #剩余位置
+        surplus:
+          fixed: false
       id_card:
-        - mode: hash
-          scene: web
-          #算法
-          algorithm: sm3
-          #盐
-          salt: grvyw$2
-      #addr:
-      #  - mode: empty
+        mode: hash
+        scene: web
+        #算法
+        algorithm: sm3
+        #盐
+        salt: grvyw$2
       ip:
-        - mode: regex
-          #正则表达式
-          pattern: (\\d{1,3}.).*(.\\d{1,3})
-          rv: $1****$2
+        mode: regex
+        #正则表达式
+        pattern: (\\d{1,3}.).*(.\\d{1,3})
+        rv: $1****$2

@@ -1,4 +1,6 @@
-package com.ouo.mask.properties;
+package com.ouo.mask.rule;
+
+import com.ouo.mask.enums.ModeEnum;
 
 /***********************************************************
  * 置空脱敏规则
@@ -6,4 +8,7 @@ package com.ouo.mask.properties;
  * Date:     2023/1/29
  ***********************************************************/
 public class EmptyDesensitizationRule extends DesensitizationRule {
+    public EmptyDesensitizationRule() {
+        this.mode = ModeEnum.EMPTY;
+    }
 }

@@ -1,5 +1,6 @@
-package com.ouo.mask.properties;
+package com.ouo.mask.rule;
 
+import com.ouo.mask.enums.ModeEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,4 +16,8 @@ public class RegexDesensitizationRule extends DesensitizationRule {
     private String pattern;
     // 替换值
     private String rv;
+
+    public RegexDesensitizationRule() {
+        this.mode = ModeEnum.REGEX;
+    }
 }

@@ -1,48 +1,48 @@
 {
   "groups": [
     {
-      "name": "ouo.desensitization",
-      "type": "com.ouo.mask.DesensitizationProperties",
-      "sourceType": "com.ouo.mask.DesensitizationProperties"
+      "name": "ouo.desens",
+      "type": "com.ouo.mask.config.DesensitizationProperties",
+      "sourceType": "com.ouo.mask.config.DesensitizationProperties"
     },
     {
-      "name": "ouo.desensitization.strategy",
-      "type": "com.ouo.mask.properties.DesensitizationStrategy",
-      "sourceType": "com.ouo.mask.DesensitizationProperties",
+      "name": "ouo.desens.strategy",
+      "type": "com.ouo.mask.rule.DesensitizationStrategy",
+      "sourceType": "com.ouo.mask.config.DesensitizationProperties",
       "sourceMethod": "getStrategy()"
     }
   ],
   "properties": [
     {
-      "name": "ouo.desensitization.enabled",
+      "name": "ouo.desens.enabled",
       "type": "java.lang.Boolean",
       "description": "是否启用脱敏",
-      "sourceType": "com.ouo.mask.DesensitizationProperties",
+      "sourceType": "com.ouo.mask.config.DesensitizationProperties",
       "defaultValue": false
     },
     {
-      "name": "ouo.desensitization.strategy.packages",
+      "name": "ouo.desens.strategy.packages",
       "type": "java.lang.String[]",
       "description": "脱敏范围即配置包路径，多个值时以英文逗号隔开",
-      "sourceType": "com.ouo.mask.properties.DesensitizationStrategy"
+      "sourceType": "com.ouo.mask.rule.DesensitizationStrategy"
     },
     {
-      "name": "ouo.desensitization.strategy.effect-date",
+      "name": "ouo.desens.strategy.effect-date",
       "type": "java.lang.String",
       "description": "脱敏策略生效日期，日前格式例如：'yyyy-MM-dd HH:mm:ss'，'yyyy-MM-dd','yyyyMMdd'等常见格式都支持",
-      "sourceType": "com.ouo.mask.properties.DesensitizationStrategy"
+      "sourceType": "com.ouo.mask.rule.DesensitizationStrategy"
     },
     {
-      "name": "ouo.desensitization.strategy.expiry-date",
+      "name": "ouo.desens.strategy.expiry-date",
       "type": "java.lang.String",
       "description": "脱敏策略失效日期，日前格式例如：'yyyy-MM-dd HH:mm:ss'，'yyyy-MM-dd','yyyyMMdd'等常见格式都支持",
-      "sourceType": "com.ouo.mask.properties.DesensitizationStrategy"
+      "sourceType": "com.ouo.mask.rule.DesensitizationStrategy"
     },
     {
-      "name": "ouo.desensitization.rules",
-      "type": "java.util.Map<java.lang.String,com.ouo.mask.properties.DesensitizationRule>",
+      "name": "ouo.desens.rules",
+      "type": "java.util.Map<java.lang.String,com.ouo.mask.rule.DesensitizationRule>",
       "description": "脱敏规则，其格式（key:rule）",
-      "sourceType": "com.ouo.mask.properties.DesensitizationProperties"
+      "sourceType": "com.ouo.mask.config.DesensitizationProperties"
     }
   ],
   "hints": [

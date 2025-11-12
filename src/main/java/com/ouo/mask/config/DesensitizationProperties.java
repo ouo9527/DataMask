@@ -1,23 +1,24 @@
-package com.ouo.mask;
+package com.ouo.mask.config;
 
-import cn.hutool.core.bean.BeanPath;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.lang.Dict;
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
+import com.ouo.mask.annotation.Hash;
 import com.ouo.mask.enums.ModeEnum;
 import com.ouo.mask.enums.SceneEnum;
-import com.ouo.mask.properties.*;
+import com.ouo.mask.enums.SensitiveTypeEnum;
+import com.ouo.mask.rule.*;
 import com.ouo.mask.util.StringUtil;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.EnumerablePropertySource;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.PropertySource;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @Value失效场景： 1、PropertySourcesPlaceholderConfigurer类及其子类使用，由于配置还未加载并解析
@@ -41,29 +42,48 @@ import java.util.*;
  * 4）脱敏规则或策略不影响局部的注解脱敏
  */
 @Slf4j
+@Setter
+@Getter
 public class DesensitizationProperties {
-    public static final String PREFIX = "ouo.desensitization";
+    public static final String PREFIX = "ouo.desens";
     public static final String RULES = PREFIX + ".rules";
     public static final String STRATEGY = PREFIX + ".strategy";
 
-    @Autowired
-    private Environment env;
+    // 是否启用脱敏
+    private boolean enabled;
+    // 脱敏策略
+    private DesensitizationStrategy strategy;
+    // 脱敏规则
+    private Map<String, DesensitizationRule> rules;
+
+    public void setRules(Map<String, ?> rules) {
+        if (CollUtil.isEmpty(rules)) return;
+        this.rules = new HashMap<>();
+        for (Map.Entry<String, ?> entry : rules.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                this.rules.put(StringUtil.toCamelCase2(entry.getKey()), this.convert(entry.getKey(), (Map) entry.getValue()));
+            }
+        }
+    }
+
+    /*@Autowired
+    private Environment env;*/
 
     /**
      * 获取脱敏策略
      *
      * @return
      */
-    public DesensitizationStrategy getStrategy() {
+    /*public DesensitizationStrategy getStrategy() {
         return this.getDict(DesensitizationProperties.STRATEGY).getByPath(DesensitizationProperties.STRATEGY, DesensitizationStrategy.class);
-    }
+    }*/
 
     /**
      * 获取脱敏规则
      *
      * @return
      */
-    public Map<String, List<DesensitizationRule>> getRules() {
+    /*public Map<String, List<DesensitizationRule>> getRules() {
         //脱敏规则，key：字段，value：规则集
         Map<String, List<DesensitizationRule>> rules = new HashMap<>();
         CollUtil.forEach(this.getDict(DesensitizationProperties.RULES).getByPath(DesensitizationProperties.RULES, Map.class), (k, v, i) -> {
@@ -77,7 +97,7 @@ public class DesensitizationProperties {
         });
 
         return rules;
-    }
+    }*/
 
     /**
      * 从Environment对象中获取相应脱敏配置
@@ -85,17 +105,17 @@ public class DesensitizationProperties {
      * @param prefix
      * @return
      */
-    private Dict getDict(String prefix) {
+    /*private Dict getDict(String prefix) {
         // 对于Springboot可以采用Binder
-        /*if (null != env) {
+        *//*if (null != env) {
             this.setRules(Binder.get(env).bind(PREFIX, Bindable.mapOf(Object.class, Object.class))
                     .orElse(new Properties()));
-        }*/
+        }*//*
         Properties properties = new Properties();
         if (env instanceof ConfigurableEnvironment) {
             for (PropertySource<?> propertySource : ((ConfigurableEnvironment) env).getPropertySources()) { //获取所有配置文件的属性
-                /*if (null == propertySource || !LOCAL_PROPERTIES_PROPERTY_SOURCE_NAME.equals(propertySource.getName()))
-                    continue;*/
+                *//*if (null == propertySource || !LOCAL_PROPERTIES_PROPERTY_SOURCE_NAME.equals(propertySource.getName()))
+                    continue;*//*
                 if (propertySource instanceof EnumerablePropertySource) {
                     for (String key : ((EnumerablePropertySource) propertySource).getPropertyNames()) {
                         if (key.startsWith(prefix)) {
@@ -112,48 +132,61 @@ public class DesensitizationProperties {
         });
 
         return dict;
-    }
+    }*/
 
-    private List<DesensitizationRule> convert(String field, List<?> rules) {
-        final List<DesensitizationRule> drs = new ArrayList<>();
-        CollUtil.forEach(rules, ((r, i) -> {
-            if (r instanceof Map) {
-                String mode = MapUtil.getStr((Map) r, "mode", "");
-                String scene = MapUtil.getStr((Map) r, "scene", "");
+    /**
+     * 将字段脱敏规则转具体脱敏规则类
+     *
+     * @param field 待脱敏字段
+     * @param rule  字段脱敏规则
+     * @return
+     */
+    private DesensitizationRule convert(String field, Map rule) {
+        DesensitizationRule dr = null;
+        String mode = MapUtil.getStr(rule, "mode", "");
+        String scene = MapUtil.getStr(rule, "scene", "");
 
-                if (StrUtil.isNotBlank(mode)) ((Map) r).put("mode", mode.toUpperCase());
-                if (StrUtil.isNotBlank(scene)) ((Map) r).put("scene", scene.toUpperCase());
-                DesensitizationRule dr = null;
-                if (StrUtil.equalsIgnoreCase(mode, ModeEnum.EMPTY.name())) {//置空
-                    dr = BeanUtil.toBean(r, EmptyDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.HASH.name())) {//哈希
-                    String algorithm = MapUtil.getStr((Map) r, "algorithm", "");
-                    if (StrUtil.isNotBlank(algorithm)) ((Map) r).put("algorithm", algorithm.toUpperCase());
-                    dr = BeanUtil.toBean(r, HashDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REGEX.name())) {//正则
-                    dr = BeanUtil.toBean(r, RegexDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REPL.name())) {//替换
-                    Object posns = ((Map) r).get("posns");
-                    //对于springboot yml转properties时，若多层数组嵌套时，会被转成LinkedHashMap
-                    if (posns instanceof Map) ((Map) r).put("posns", CollUtil.newArrayList(((Map) posns).values()));
-                    dr = BeanUtil.toBean(r, ReplDesensitizationRule.class);
-                } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.MASK.name())) {//掩盖
-                    String type = MapUtil.getStr((Map) r, "type", "");
-                    if (StrUtil.isNotBlank(type)) ((Map) r).put("type", type.toUpperCase());
-                    dr = BeanUtil.toBean(r, MaskDesensitizationRule.class);
-                } else {
-                    log.debug("{}.{}[{}]: mode={} is not within the range of [empty,hash,regex,replace,mask]",
-                            DesensitizationProperties.RULES, field, i, mode);
+        if (StrUtil.equalsIgnoreCase(mode, ModeEnum.EMPTY.name())) { // 置空
+            dr = new EmptyDesensitizationRule();
+        } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.HASH.name())) { // 哈希
+            dr = new HashDesensitizationRule();
+            ((HashDesensitizationRule) dr).setAlgorithm(Convert.convert(Hash.AlgorithmEnum.class,
+                    StrUtil.toUpperCase(MapUtil.getStr(rule, "algorithm", "")), Hash.AlgorithmEnum.SM3));
+            ((HashDesensitizationRule) dr).setSalt(MapUtil.getStr(rule, "salt", ""));
+        } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REGEX.name())) { // 正则
+            dr = new RegexDesensitizationRule();
+            ((RegexDesensitizationRule) dr).setPattern(MapUtil.getStr(rule, "pattern", ""));
+            ((RegexDesensitizationRule) dr).setRv(MapUtil.getStr(rule, "rv", ""));
+
+        } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REPL.name())) { // 替换
+            dr = new ReplDesensitizationRule();
+            ((ReplDesensitizationRule) dr).setSurplus(MapUtil.get(rule, "surplus", ReplDesensitizationRule.Posn.class, null));
+            //对于springboot yml转properties时，若多层数组嵌套时，会被转成LinkedHashMap
+            List<?> posns = MapUtil.get(rule, "posns", List.class, null);
+            if (CollUtil.isNotEmpty(posns)) {
+                List<ReplDesensitizationRule.Posn> posnList = new ArrayList<>(posns.size());
+                for (Object posn : posns) {
+                    posnList.add(BeanUtil.toBean(posn, ReplDesensitizationRule.Posn.class));
                 }
-
-                if (null != dr) {
-                    dr.setScene(null == dr.getScene() ? SceneEnum.ALL : dr.getScene());
-                    dr.setField(field);
-                    drs.add(dr);
-                }
+                ((ReplDesensitizationRule) dr).setPosns(posnList);
             }
-        }));
+        } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.MASK.name())) { // 掩盖
+            dr = new MaskDesensitizationRule();
+            ((MaskDesensitizationRule) dr).setType(Convert.convert(SensitiveTypeEnum.class,
+                    StrUtil.toUpperCase(MapUtil.getStr(rule, "type", "")), null));
+            ((MaskDesensitizationRule) dr).setShow(MapUtil.get(rule, "show", MaskDesensitizationRule.CustomShow.class, null));
+        } else {
+            log.debug("{}.{}.mode: mode={} is not within the range of [empty,hash,regex,replace,mask]",
+                    DesensitizationProperties.RULES, field, mode);
+        }
 
-        return drs;
+        if (null != dr) {
+            if (StrUtil.isNotBlank(scene)) {
+                dr.setScene(Convert.convert(SceneEnum.class, StrUtil.toUpperCase(scene), SceneEnum.ALL));
+            }
+            dr.setField(field);
+        }
+
+        return dr;
     }
 }

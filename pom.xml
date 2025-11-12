@@ -48,7 +48,7 @@
         <!-- 跳过测试和源码打包 -->
         <!-- 跳过测试： 1、采用参数命令： mvn clean package -Dmaven.test.skip=true 或mvn clean package -DskipTests
           2、在 IDEA 的 Maven 可视化面板里点击即可，也可在上方勾选跳过测试的图标（绿色的闪电⚡）
-          3、在项目的 pom 文件的 <properties> 下配置 <skipTests>true</skipTests>
+          3、在项目的 pom 文件的 <rule> 下配置 <skipTests>true</skipTests>
             是由于spring-boot-maven-plugin 插件集成了maven-surefire-plugin 插件，会自动运行 junit test
         -->
         <maven.test.skip>true</maven.test.skip>
@@ -64,7 +64,7 @@
         <!-- XPath -->
         <!--<jaxen.version>1.1.6</jaxen.version>-->
         <!-- Hutool -->
-        <hutool.version>5.8.21</hutool.version>
+        <hutool.version>5.8.38</hutool.version>
         <!-- bouncycastle：密钥算法 -->
         <bouncycastle.version>1.75</bouncycastle.version>
         <!-- 高性能深拷贝：Kryo、FST(2.x-JDK1.7及以上、3.x-JDK14及以上) -->
@@ -134,11 +134,11 @@
         <!-- propertiestojson: 解决properties文件转Map时，将key中属性引用变成对象（不建议使用，依赖Gson） -->
         <!--<dependency>
             <groupId>pl.jalokim.propertiestojson</groupId>
-            <artifactId>java-properties-to-json</artifactId>
+            <artifactId>java-rule-to-json</artifactId>
             <version>${propertiestojson.version}</version>
             <optional>true</optional>
         </dependency>-->
-        <!-- yaml、properties、json三者互转 -->
+        <!-- yaml、rule、json三者互转 -->
         <!--<dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
@@ -146,7 +146,7 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-properties</artifactId>
+            <artifactId>jackson-dataformat-rule</artifactId>
             <optional>true</optional>
         </dependency>-->
         <!-- json: fastjson -->

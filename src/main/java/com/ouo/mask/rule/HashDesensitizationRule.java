@@ -1,6 +1,7 @@
-package com.ouo.mask.properties;
+package com.ouo.mask.rule;
 
 import com.ouo.mask.annotation.Hash;
+import com.ouo.mask.enums.ModeEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,7 +15,11 @@ import lombok.Setter;
 public class HashDesensitizationRule extends DesensitizationRule {
     //Hash算法
     //@JSONField(serializeFeatures = JSONWriter.Feature.WriteEnumsUsingName)
-    private Hash.AlgorithmEnum algorithm;
+    private Hash.AlgorithmEnum algorithm = Hash.AlgorithmEnum.SM3;
     //盐
     private String salt;
+
+    public HashDesensitizationRule() {
+        this.mode = ModeEnum.HASH;
+    }
 }

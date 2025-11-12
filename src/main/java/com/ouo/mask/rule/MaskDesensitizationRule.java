@@ -1,5 +1,6 @@
-package com.ouo.mask.properties;
+package com.ouo.mask.rule;
 
+import com.ouo.mask.enums.ModeEnum;
 import com.ouo.mask.enums.SensitiveTypeEnum;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,10 @@ public class MaskDesensitizationRule extends DesensitizationRule {
      * 11、数值：默认显示第1位
      */
     private CustomShow show;
+
+    public MaskDesensitizationRule() {
+        this.mode = ModeEnum.MASK;
+    }
 
     //自定义显示
     @Setter

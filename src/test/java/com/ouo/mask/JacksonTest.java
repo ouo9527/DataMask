@@ -43,7 +43,7 @@ public class JacksonTest {
 
     @Test
     public void jackson() throws JsonProcessingException {
-        // 若开启SerializationFeature.FAIL_ON_EMPTY_BEANS，则无属性的空对象时，会报No serializer found for class java.lang.Object and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
+        // 若开启SerializationFeature.FAIL_ON_EMPTY_BEANS，则无属性的空对象时，会报No serializer found for class java.lang.Object and no rule discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
         log.info("无属性的空对象转JSON字符串：{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(new Object()));
         log.info("无属性的空对象转XML字符串：{}", xmlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(new Object()));
 
