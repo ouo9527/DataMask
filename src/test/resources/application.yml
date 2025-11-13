@@ -1,7 +1,7 @@
 ouo:
   desens:
-    #启动脱敏
-    enabled: true
+    #是否开启脱敏，默认true即开启
+    #enabled: true
     # 脱敏策略
     strategy:
       #脱敏范围即配置包路径，多个值时以英文逗号隔开；为了减少不必要的数据脱敏，否则会影响系统性能，因此推荐设置。默认：空，当为空时，会扫描全部类
@@ -24,7 +24,9 @@ ouo:
       phone:
         mode: repl
         scene: all
+        #按位置（从左往右）进行替换
         posns:
+          #i表示位置索引
           - i: 3
           - i: 8
             #是否固定值，默认true，false为随机值
@@ -43,6 +45,6 @@ ouo:
         salt: grvyw$2
       ip:
         mode: regex
-        #正则表达式
-        pattern: (\\d{1,3}.).*(.\\d{1,3})
+        #正则表达式，注：yml配置中无需使用\转义符，只需符合正则语法即可，但properties配置文件中正则特殊符号最好使用1个反斜杠进行转义
+        pattern: (\d{1,}.).*(.\d{1,})
         rv: $1****$2

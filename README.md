@@ -78,51 +78,55 @@
 ```yaml
 ouo:
   desens:
-    #启动脱敏
+    #是否开启脱敏，默认true即开启
     enabled: true
     #脱敏策略
     strategy:
       #脱敏范围即配置包路径，多个值时以英文逗号隔开；为了减少不必要的数据脱敏，否则会影响系统性能，因此推荐设置。默认：空，当为空时，会扫描全部类
       packages: xx.xx,yy.yy
+      #effect-date和expiry-date分别表示脱敏生效期和失效期，使用场景，如：只是某个时间段需要脱敏，而过了这段时间就无需脱敏，此时可以通过这两个属性设置
       #effect-date:
       #expiry-date:
     #字段敏规则
     rules:
       #字段名
-      field1:
+      field1: #需脱敏字段1
         #脱敏模式：置空empty、哈希hash、正则regex、替换replace、掩盖mask
         mode: mask
         #脱敏场景：日志log、网页web、全部all，默认all
         scene: log
         #敏感类型，采用内置脱敏配置
         type: full_name
-      field2: 
+      field2: #需脱敏字段2
         mode: replace
         scene: all
+        #按位置（从左往右）进行替换
         posns:
-          - i: 3
-          - i: 8
+          #i表示位置索引
+          - i: 3 #表示前三位保持原样
+          - i: 8 #3～8采用固定值替换
             #是否固定值，默认true，false为随机值
             fixed: true
             #替换值
             rv: "#"
         #剩余位置
         surplus:
-          fixed: false    
-      field3: 
+          fixed: false  #表示剩余位置，采用随机值替换  
+      field3: #需脱敏字段3
         mode: hash
         scene: web
         #算法
         algorithm: sm3
         #盐
         salt: grvyw$2
-      field4: 
+      field4: #需脱敏字段4
         mode: empty
       # 如ip  
-      field5: 
+      field5: #需脱敏字段5
         mode: regex
         #正则表达式
         pattern: (\\d{3})\\d{4}(\\d{4})
+        #替换值
         rv: $1####$2
 ```
 

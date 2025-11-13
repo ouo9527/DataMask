@@ -15,10 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @Value失效场景： 1、PropertySourcesPlaceholderConfigurer类及其子类使用，由于配置还未加载并解析
@@ -49,8 +46,8 @@ public class DesensitizationProperties {
     public static final String RULES = PREFIX + ".rules";
     public static final String STRATEGY = PREFIX + ".strategy";
 
-    // 是否启用脱敏
-    private boolean enabled;
+    // 是否启用脱敏，默认开启
+    private boolean enabled = true;
     // 脱敏策略
     private DesensitizationStrategy strategy;
     // 脱敏规则
@@ -65,74 +62,6 @@ public class DesensitizationProperties {
             }
         }
     }
-
-    /*@Autowired
-    private Environment env;*/
-
-    /**
-     * 获取脱敏策略
-     *
-     * @return
-     */
-    /*public DesensitizationStrategy getStrategy() {
-        return this.getDict(DesensitizationProperties.STRATEGY).getByPath(DesensitizationProperties.STRATEGY, DesensitizationStrategy.class);
-    }*/
-
-    /**
-     * 获取脱敏规则
-     *
-     * @return
-     */
-    /*public Map<String, List<DesensitizationRule>> getRules() {
-        //脱敏规则，key：字段，value：规则集
-        Map<String, List<DesensitizationRule>> rules = new HashMap<>();
-        CollUtil.forEach(this.getDict(DesensitizationProperties.RULES).getByPath(DesensitizationProperties.RULES, Map.class), (k, v, i) -> {
-            final String field = StrUtil.toStringOrNull(k);
-            if (v instanceof List) {
-                rules.put(StringUtil.toCamelCase2(field), convert(field, (List) v));
-            } else if (v instanceof Map) {
-                rules.put(StringUtil.toCamelCase2(field), convert(field, CollUtil.newArrayList(((Map) v).values())));
-            } else log.debug("{}.{}: This does not comply with the desensitization rules.",
-                    DesensitizationProperties.RULES, field);
-        });
-
-        return rules;
-    }*/
-
-    /**
-     * 从Environment对象中获取相应脱敏配置
-     *
-     * @param prefix
-     * @return
-     */
-    /*private Dict getDict(String prefix) {
-        // 对于Springboot可以采用Binder
-        *//*if (null != env) {
-            this.setRules(Binder.get(env).bind(PREFIX, Bindable.mapOf(Object.class, Object.class))
-                    .orElse(new Properties()));
-        }*//*
-        Properties properties = new Properties();
-        if (env instanceof ConfigurableEnvironment) {
-            for (PropertySource<?> propertySource : ((ConfigurableEnvironment) env).getPropertySources()) { //获取所有配置文件的属性
-                *//*if (null == propertySource || !LOCAL_PROPERTIES_PROPERTY_SOURCE_NAME.equals(propertySource.getName()))
-                    continue;*//*
-                if (propertySource instanceof EnumerablePropertySource) {
-                    for (String key : ((EnumerablePropertySource) propertySource).getPropertyNames()) {
-                        if (key.startsWith(prefix)) {
-                            properties.put(key, propertySource.getProperty(key));
-                        }
-                    }
-                }
-            }
-        }
-        //具体层级的Map
-        Dict dict = Dict.create();
-        CollUtil.forEach(properties, (k, v, i) -> {
-            BeanPath.create(StrUtil.toStringOrNull(k)).set(dict, v);
-        });
-
-        return dict;
-    }*/
 
     /**
      * 将字段脱敏规则转具体脱敏规则类
@@ -162,7 +91,13 @@ public class DesensitizationProperties {
             dr = new ReplDesensitizationRule();
             ((ReplDesensitizationRule) dr).setSurplus(MapUtil.get(rule, "surplus", ReplDesensitizationRule.Posn.class, null));
             //对于springboot yml转properties时，若多层数组嵌套时，会被转成LinkedHashMap
-            List<?> posns = MapUtil.get(rule, "posns", List.class, null);
+            Object obj = MapUtil.get(rule, "posns", Object.class, null);
+            List<?> posns = null;
+            if (obj instanceof Map) {
+                posns = new ArrayList<>(((Map) obj).values());
+            } else if (obj instanceof Collection) {
+                posns = new ArrayList<>((Collection) obj);
+            }
             if (CollUtil.isNotEmpty(posns)) {
                 List<ReplDesensitizationRule.Posn> posnList = new ArrayList<>(posns.size());
                 for (Object posn : posns) {

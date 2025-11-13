@@ -144,6 +144,11 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                 .findAny().orElse(null));
     }
 
+    @Override
+    public <T> T desensitized(SceneEnum scene, String fieldName, T data) {
+        return this.desensitized(scene, fieldName, data, null);
+    }
+
     /**
      * 从Jackson中XmlMapper获取xml字符串根节点
      *
@@ -166,11 +171,6 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         }
         log.debug("Missing name, in state: {}", xmlParser.currentToken());
         return null;
-    }
-
-    @Override
-    public <T> T desensitized(SceneEnum scene, String fieldName, T data) {
-        return this.desensitized(scene, fieldName, data, null);
     }
 
     /**
@@ -221,32 +221,6 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         }
 
         return this.desensitized(data, scene);
-    }
-
-    /**
-     * 根据脱敏策略验证是否支持脱敏
-     *
-     * @param context 待脱敏对象所被使用的上下文即在那个类中使用
-     * @return
-     */
-    @Override
-    public boolean supports(String context) {
-        if (null == desensitizationProperties) return true;
-        // 若全局脱敏策略不为空
-        DesensitizationStrategy strategy = desensitizationProperties.getStrategy();
-        if (null != strategy) {
-            // 若无配置脱敏范围或上下文 context 需要在脱敏范围内，则可脱敏
-            if (ArrayUtil.isNotEmpty(strategy.getPackages()) &&
-                    !StrUtil.startWithAny(context, strategy.getPackages())) return false;
-            // 验证脱敏有效期内不脱敏
-            Date effectDate = strategy.getEffectDate();
-            Date expiryDate = strategy.getExpiryDate();
-            Date currentDate = new Date();
-            // new Date(System.currentTimeMillis() + 1) 是由于执行过快，时间片一样，此时为false
-            return currentDate.before(null == effectDate ? new Date(System.currentTimeMillis() + 1) : effectDate) ||
-                    currentDate.after(null == expiryDate ? new Date(System.currentTimeMillis() + 1) : expiryDate);
-        }
-        return true;
     }
 
     /**
@@ -515,5 +489,34 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                 .append(ReUtil.replaceAll(xml, "(\\s*<\\?xml.*\\?>)?", ""))
                 .append(DEFAULT_END_ROOT_NODE)
                 .toString();
+    }
+
+    /**
+     * 根据脱敏策略验证是否支持脱敏
+     *
+     * @param context 待脱敏对象所被使用的上下文即在那个类中使用
+     * @return
+     */
+    @Override
+    public boolean supports(String context) {
+        if (null == desensitizationProperties) return true;
+        if (desensitizationProperties.isEnabled()) {
+            // 若全局脱敏策略不为空
+            DesensitizationStrategy strategy = desensitizationProperties.getStrategy();
+            if (null != strategy) {
+                // 若无配置脱敏范围或上下文 context 需要在脱敏范围内，则可脱敏
+                if (ArrayUtil.isNotEmpty(strategy.getPackages()) &&
+                        !StrUtil.startWithAny(context, strategy.getPackages())) return false;
+                // 验证脱敏有效期内不脱敏
+                Date effectDate = strategy.getEffectDate();
+                Date expiryDate = strategy.getExpiryDate();
+                Date currentDate = new Date();
+                // new Date(System.currentTimeMillis() + 1) 是由于执行过快，时间片一样，此时为false
+                return currentDate.before(null == effectDate ? new Date(System.currentTimeMillis() + 1) : effectDate) ||
+                        currentDate.after(null == expiryDate ? new Date(System.currentTimeMillis() + 1) : expiryDate);
+            }
+            return true;
+        }
+        return false;
     }
 }

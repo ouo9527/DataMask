@@ -109,7 +109,7 @@ public abstract class DesensitizedUtil {
      */
     public static String regexDesensitized(SceneEnum scene, RegexDesensitizationRule rule, String fieldName, String data) {
         if (!matches(scene, rule, fieldName, data)) return data;
-        //Java正则特殊符号必须使用2个反斜杠，如：(\\d{3})\\d{4}(\\d{4})
+        //Java正则特殊符号必须使用1个反斜杠进行转义，如：(\\d{3})\\d{4}(\\d{4})，yml配置文件中无需使用\转义符，只需符合正则语法即可，但properties中如Java，经验证，可一个或三个，最终都会被换成1个
         //替换值：$1####$2，如：17788485848脱敏后177####5848
         if (StrUtil.isNotBlank(rule.getPattern())) {
             return ReUtil.replaceAll(data, rule.getPattern(), rule.getRv());
