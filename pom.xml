@@ -31,8 +31,10 @@
     <properties>
         <java.version>8</java.version>
         <maven.compiler.source>1.8</maven.compiler.source>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
@@ -279,6 +281,12 @@
                 <configuration>
                     <!-- 禁用严格语法检测 -->
                     <doclint>none</doclint>
+                    <!-- 指定源文件的编码，也可以使用jvm属性，如：-Dfile.encoding -->
+                    <encoding>UTF-8</encoding>
+                    <!-- 指定生成的HTML文件的编码 -->
+                    <docencoding>UTF-8</docencoding>
+                    <!-- 指定 HTML 字符集 -->
+                    <charset>UTF-8</charset>
                 </configuration>
             </plugin>
             <plugin>
