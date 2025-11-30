@@ -9,13 +9,12 @@ import com.ouo.mask.support.log.LogbackContextInitializer;
 import com.ouo.mask.support.web.DesensitizationResponseBodyAdvice;
 import com.ouo.mask.util.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 /***********************************************************
@@ -23,8 +22,8 @@ import org.springframework.context.annotation.Import;
  * Author:   刘春
  * Date:     2023/1/17
  ***********************************************************/
-@EnableAutoConfiguration
-@Configuration
+//@EnableAutoConfiguration // 若@EnableAutoConfiguration + spring.factories同时使用会造成 DesensitizationAutoConfiguration 循环依赖
+@AutoConfiguration
 @ConditionalOnProperty(prefix = DesensitizationProperties.PREFIX, name = "enabled", havingValue = "true", matchIfMissing = true)
 @Import({SpringUtil.class, DesensitizationResponseBodyAdvice.class})
 //@EnableConfigurationProperties({DesensitizationProperties.class})

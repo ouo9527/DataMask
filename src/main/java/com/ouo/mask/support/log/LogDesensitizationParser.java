@@ -33,12 +33,11 @@ public interface LogDesensitizationParser {
      */
     default String resolvePlaceholder(String loggerName, String template, final Object[] args) {
         DesensitizationHandler desensitizedhandler = SpringUtil.getBean(DesensitizationHandler.class);
-        if (StrUtil.isBlank(template) || ArrayUtil.isEmpty(args) || null == desensitizedhandler
-                || !desensitizedhandler.supports(loggerName)) {
+        if (StrUtil.isBlank(template) || ArrayUtil.isEmpty(args) || null == desensitizedhandler) {
             return template;
         }
         SpelExpressionResolver expressionResolver = SpringUtil.getBean(SpelExpressionResolver.class);
-        final Object[] results = desensitizedhandler.desensitized(SceneEnum.LOG, args);
+        final Object[] results = desensitizedhandler.desensitized(loggerName, SceneEnum.LOG, args);
         return expressionResolver.getValueByLogTemplate(template, new SpelExpressionMetaData(results), (e, i, c) -> {
             Object val = null;
             if (StrUtil.isEmpty(e)) { // 只含{}占位符

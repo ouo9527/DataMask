@@ -38,7 +38,7 @@ public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Obj
         if (null != handler && null != returnType && !Void.TYPE.equals(returnType.getMethod().getReturnType())) {
             Boolean enabled = AnnotationUtil.getAnnotationValue(returnType.getMethod(), Desensitization.class,
                     "enabled");
-            return (null == enabled || enabled) && handler.supports(returnType.getDeclaringClass().getName());
+            return null == enabled || enabled;
         }
         return false;
     }
@@ -53,6 +53,6 @@ public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Obj
         } catch (RuntimeException e) {
         }
         return (null != permission && permission.hasNotPermission(request)) ? body :
-                handler.desensitized(SceneEnum.WEB, body);
+                handler.desensitized(returnType.getDeclaringClass().getName(), SceneEnum.WEB, body);
     }
 }
