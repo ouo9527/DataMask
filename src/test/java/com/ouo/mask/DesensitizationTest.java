@@ -12,6 +12,7 @@ import com.ouo.mask.util.StrUtil;
 import com.ouo.mask.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.slf4j.helpers.MessageFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Document;
@@ -170,5 +171,49 @@ public class DesensitizationTest extends AbstractUnitTest {
 
         System.out.printf("根据注解&配置进行脱敏：%s\n", handler.desensitized(this.getClass().getName(), SceneEnum.ALL, user));
 
+    }
+
+    /**
+     * 日志脱敏
+     */
+    @Test
+    public void desensitizedLog() {
+        String template = "转义占位符：\\{}，占位符1：{'}，占位符2：{name}，占位符3：{ }，占位符4：{}，占位符5：\\\\{}、占位符7：{、占位符8：}\"，占位符9：\\{}、占位符10：{\\}"; //占位符6：{、
+        Object[] args = new Object[]{"hello", "world", "张思", null};
+        log.info(template, args);
+        System.out.println("MessageFormatter: " + MessageFormatter.arrayFormat(template, args).getMessage());
+
+        User user = new User("");
+        user.setName("张王四");
+        user.setExtra("{\"phone\":17722657194}");
+        user.setTel("0987-2322");
+        user.setPhone("17722657194");
+        user.setMobile("17722657194");
+        user.setAddr(new String[]{"北京市朝阳区发和小区1号楼2单元303室", "广东省深圳市福田区1单元"});
+        user.setAmount("10387.34");
+        user.setCar("云A8848");
+        user.setBankCard(new StringBuilder("636669809199510286631"));
+        user.setPassport("G99923456");
+        user.setDate("2023年9月11日");
+        User.Attach attach = user.new Attach();
+        attach.setHobbies(Arrays.asList("打球"));
+        attach.setEmail("lc123@qq.com");
+        attach.setCard("532128199510286631");
+        user.setAttach(attach);
+        // 全部会脱敏
+        log.info("日志脱敏格式1(只含一个参数，多个占位符或占位符spel表达式)：无表达式={}、符合规范spel模板表达式={name}、符合规范spel表达式1={#p0.phone}、符合规范spel表达式2={#a0.bankCard}",
+                user);
+        // 全部会脱敏
+        log.info("日志脱敏表达式2(多个参数，多个占位符或占位符spel表达式)：用户名={name}、{acctName}、电话号码={#p0.phone}，{}",
+                user, "{\"phone\":\"18822657316\"}", "<?xml version=\"1.0\" ?><acctName>张三丰</acctName>");
+        // 全部会脱敏
+        // 若存在对占位符进行转义（例如：\\{}、姓名={}、电话号码={}），此时按位取值需要注意，正常被转义占位符不参与取值，避免错落
+        log.info("日志脱敏格式3(多个参数，多个占位符spel表达式且有转义符)：转义占位符(此时占位符属于无效)=\\{}、用户名={name}、电话号码={phone}",
+                user.getName(), user.getPhone());
+        // 无占位符不会脱敏
+        log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
+                user.getAddr(), user.getName(), user.getPhone(), null);
+
+        log.info("日志脱敏格式5(参数含异常对象)：{name} {e}", "hello", new RuntimeException("123"));
     }
 }
