@@ -102,15 +102,33 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
     //通过name获取 Bean.
 
     /**
-     * 通过class获取Bean
+     * 通过class获取Bean，若不存在会抛异常
      *
      * @param <T>   Bean类型
      * @param clazz Bean类
      * @return Bean对象
      */
     public static <T> T getBean(Class<T> clazz) {
+        return getBean(clazz, false);
+    }
+
+    /**
+     * 通过class获取Bean
+     *
+     * @param <T>     Bean类型
+     * @param clazz   Bean类
+     * @param quietly 是否静默转换，true不抛异常
+     * @return Bean对象或null
+     */
+    public static <T> T getBean(Class<T> clazz, boolean quietly) {
+        if (quietly) {
+            if (null != getBeanFactory() && ArrayUtil.isNotEmpty(getBeanNamesForType(clazz))) {
+                return getBeanFactory().getBean(clazz);
+            } else return null;
+        }
         return getBeanFactory().getBean(clazz);
     }
+
 
     /**
      * 通过name,以及Clazz返回指定的Bean

@@ -194,12 +194,13 @@ public class SpringBootJmhTest {
         user.setAttach(attach);
 
         try {
-            System.out.printf("根据注解&配置进行脱敏：%s\n", objectMapper.writeValueAsString(handler.desensitized(SceneEnum.WEB, user)));
+            System.out.printf("根据注解&配置进行脱敏：%s\n", objectMapper.writeValueAsString(
+                    handler.desensitized(this.getClass().getName(), SceneEnum.WEB, user)));
         } catch (JsonProcessingException e) {
         }
 
         String xml = "<Student> <Name> 李四 </Name> <Phones> <Phone> 13333333311 </Phone> <Phone> &lt;13333333312> </Phone></Phones> <text><![CDATA[<name>张曼玉</name>]]></text> </Student>";
-        log.info("XML字符串脱敏后数据：{}", handler.desensitized(SceneEnum.LOG, xml));
+        log.info("XML字符串脱敏后数据：{}", handler.desensitized(this.getClass().getName(), SceneEnum.LOG, xml));
 
         //blackhole.consume(false); // 避免 JIT 优化忽略结果
     }

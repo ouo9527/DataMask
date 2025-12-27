@@ -8,13 +8,11 @@ import cn.hutool.core.text.StrBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
-import com.ouo.mask.util.StringUtil;
+import com.ouo.mask.util.StrUtil;
 import com.ouo.mask.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.slf4j.helpers.MessageFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -27,14 +25,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/*import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;*/
-
 @Slf4j
-//Junit4需要@RunWith(SpringRunner.class)+@SpringBootTest配置合；而Junit5不需要@RunWith
-//@RunWith(SpringRunner.class)
-@SpringBootTest(classes = {DesensitizationAutoConfiguration.class}/*, rule = {"classpath*:application.yml"}*/)
-public class DesensitizationTest {
+public class DesensitizationTest extends AbstractUnitTest {
 
     @Autowired
     private DesensitizationHandler handler;
@@ -44,18 +36,18 @@ public class DesensitizationTest {
      */
     @Test
     public void toCamelCase() {
-        log.info("蛇形命名（Snake Case）-> 驼峰命名案列1：{}", StringUtil.toCamelCase2("user_login_count"));
-        log.info("蛇形命名（Snake Case）-> 驼峰命名案列2：{}", StringUtil.toCamelCase2("User_login_count"));
-        log.info("蛇形命名（Snake Case）-> 驼峰命名案列3：{}", StringUtil.toCamelCase2("user_Login_count"));
-        log.info("蛇形命名（Snake Case）-> 驼峰命名案列4：{}", StringUtil.toCamelCase2("user_login-count"));
-        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列1：{}", StringUtil.toCamelCase2("first-name"));
-        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列2：{}", StringUtil.toCamelCase2("First-name"));
-        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列3：{}", StringUtil.toCamelCase2("first-Name"));
-        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列4：{}", StringUtil.toCamelCase2("first-name_count"));
-        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列1：{}", StringUtil.toCamelCase2("UserLoginCount"));
-        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列2：{}", StringUtil.toCamelCase2("userLoginCount"));
-        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列3：{}", StringUtil.toCamelCase2("UserloginCount"));
-        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列4：{}", StringUtil.toCamelCase2("UserLogin-Count"));
+        log.info("蛇形命名（Snake Case）-> 驼峰命名案列1：{}", StrUtil.toCamelCase2("user_login_count"));
+        log.info("蛇形命名（Snake Case）-> 驼峰命名案列2：{}", StrUtil.toCamelCase2("User_login_count"));
+        log.info("蛇形命名（Snake Case）-> 驼峰命名案列3：{}", StrUtil.toCamelCase2("user_Login_count"));
+        log.info("蛇形命名（Snake Case）-> 驼峰命名案列4：{}", StrUtil.toCamelCase2("user_login-count"));
+        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列1：{}", StrUtil.toCamelCase2("first-name"));
+        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列2：{}", StrUtil.toCamelCase2("First-name"));
+        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列3：{}", StrUtil.toCamelCase2("first-Name"));
+        log.info("烤肉命名（Kebab Case）-> 驼峰命名案列4：{}", StrUtil.toCamelCase2("first-name_count"));
+        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列1：{}", StrUtil.toCamelCase2("UserLoginCount"));
+        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列2：{}", StrUtil.toCamelCase2("userLoginCount"));
+        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列3：{}", StrUtil.toCamelCase2("UserloginCount"));
+        log.info("帕斯卡命名（Pascal Case）-> 驼峰命名案列4：{}", StrUtil.toCamelCase2("UserLogin-Count"));
     }
 
     /**
@@ -121,7 +113,7 @@ public class DesensitizationTest {
     public void desensitizedStr() {
         //DocumentBuilderFactory.newInstance().newDocumentBuilder().parse()
         String str = "<text><![CDATA[<name>张二狗蛋儿</name>]]></text><phone>17722657194</phone>";
-        log.info("脱敏XML片段字符串：{}", str);
+        log.info("脱敏XML片段字符串：{[text][name]}", str);
         str = "<student> <text><![CDATA[<name>张三丰</name>]]></text> <phones><phone>17722657194</phone><phone>18822657194</phone></phones><class><val>&lt;name>数学&lt;/name></val></class></student>";
         log.info("脱敏XML字符串：{}", str);
 
@@ -130,6 +122,7 @@ public class DesensitizationTest {
 
         str = "[{\"PhonE\":\"17722657194\",\"ip\":\"14.23.0.1\",\"name\":[\"张三丰\",2]},{\"phone\":\"17722657194\"}]";
         log.info("脱敏JSON数组字符串：{}", str);
+        log.info("脱敏JSON数组字符串：{phone}", str);
     }
 
 
@@ -152,7 +145,7 @@ public class DesensitizationTest {
         u.setIdCard(new StrBuilder("6879796065447"));
         data.put("user", u);
 
-        System.out.printf("根据配置进行脱敏：%s\n", handler.desensitized(SceneEnum.ALL, data));
+        System.out.printf("根据配置进行脱敏：%s\n", handler.desensitized(this.getClass().getName(), SceneEnum.ALL, data));
 
         User user = new User("");
         user.setName("张王四");
@@ -175,48 +168,7 @@ public class DesensitizationTest {
         attach.setCard("532128199510286631");
         user.setAttach(attach);
 
-        System.out.printf("根据注解&配置进行脱敏：%s\n", handler.desensitized(SceneEnum.ALL, user));
+        System.out.printf("根据注解&配置进行脱敏：%s\n", handler.desensitized(this.getClass().getName(), SceneEnum.ALL, user));
 
-    }
-
-    /**
-     * 日志脱敏
-     */
-    @Test
-    public void desensitizedLog() {
-        String template = "转义占位符：\\{}，占位符1：{}，占位符2：{name}，占位符3：{ }，占位符4：{}，占位符5：\\\\{}、占位符7：\\{、占位符8：}\"，占位符9：{}、占位符10：{}"; //占位符6：{、
-        Object[] args = new Object[]{"hello", "world", "张思", null};
-        log.info(template, args);
-        System.out.println("MessageFormatter: " + MessageFormatter.arrayFormat(template, args).getMessage());
-
-        User user = new User("");
-        user.setName("张王四");
-        user.setExtra("{\"phone\":17722657194}");
-        user.setTel("0987-2322");
-        user.setPhone("17722657194");
-        user.setMobile("17722657194");
-        user.setAddr(new String[]{"北京市朝阳区发和小区1号楼2单元303室", "广东省深圳市福田区1单元"});
-        user.setAmount("10387.34");
-        user.setCar("云A8848");
-        user.setBankCard(new StringBuilder("636669809199510286631"));
-        user.setPassport("G99923456");
-        user.setDate("2023年9月11日");
-        User.Attach attach = user.new Attach();
-        attach.setHobbies(Arrays.asList("打球"));
-        attach.setEmail("lc123@qq.com");
-        attach.setCard("532128199510286631");
-        user.setAttach(attach);
-        log.info("日志脱敏格式1(只含一个参数，多个占位符或占位符spel表达式)：无表达式={}、不规范spel模板表达式={name}、符合规范spel表达式1={#p0.phone}、符合规范spel表达式2={args[0].bankCard}",
-                user);
-
-        log.info("日志脱敏表达式2(多个参数，多个占位符或占位符spel表达式)：用户名={name}、电话号码={#p0.phone}，{}",
-                user, "{\"phone\":\"17722657194\"}", "<?xml version=\"1.0\" ?><name>张三丰</name>");
-
-        log.info("日志脱敏格式3(只含占位符即不含占位符spel表达式，参数个数多余有效占位符)：转义占位符(此时占位符属于无效)=\\{}、用户名={}、电话号码={}",
-                user.getAddr(), user.getName(), user.getPhone());
-        log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
-                user.getAddr(), user.getName(), user.getPhone(), null);
-
-        log.info("日志脱敏格式5(参数含异常对象)：{name} {e}", "hello", new RuntimeException("123"));
     }
 }

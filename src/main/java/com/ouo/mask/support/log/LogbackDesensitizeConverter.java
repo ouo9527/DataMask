@@ -9,9 +9,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
  *  最终logger打印的实际内容是converter返回的整形后的结果。
  *  需要在logback.xml配置文件，增加如下配置：
  *  <configuration>
- * ……
- * <conversionRule conversionWord="m" converterClass="com.ouo.mask.log.LogbackDesensitizeConverter"/>
- * ……
+ *      ……
+ *      <conversionRule conversionWord="m" converterClass="com.ouo.mask.support.log.LogbackDesensitizeConverter"/>
+ *      ……
  *  </configuration>
  *  注：1）conversionRule标签中conversionWord即定义日志输出格式中的信息参数，默认%msg，若如上自定义为m，则%m
  *  2）当输出一个日志logEvent时，其处理流程如下：Appender ->Encoder->Layout-> Converter
@@ -29,7 +29,7 @@ public class LogbackDesensitizeConverter extends MessageConverter implements Log
     public String convert(ILoggingEvent event) {
         try {
             return this.resolvePlaceholder(event.getLoggerName(), event.getMessage(), event.getArgumentArray());
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             //会引发死循环，从而造成栈溢出
             //log.error("从Sping容器中加载DesensitizationRule脱敏规则异常：", e);
             return super.convert(event);

@@ -7,6 +7,11 @@ import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
 
+/***********************************************************
+ * 脱敏字段序列化工厂，基于kryo进行对象字段脱敏
+ * Author:   刘春
+ * Date:     2024/12/29
+ ***********************************************************/
 public class DesensitizationFieldSerializerFactory extends SerializerFactory.FieldSerializerFactory {
     private final SceneEnum sceneEnum;
     private final DesensitizationHandler desensitizationHandler;

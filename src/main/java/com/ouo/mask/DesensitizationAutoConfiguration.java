@@ -3,14 +3,13 @@ package com.ouo.mask;
 import com.ouo.mask.config.DesensitizationProperties;
 import com.ouo.mask.handler.DefaultDesensitizationHandler;
 import com.ouo.mask.handler.DesensitizationHandler;
-import com.ouo.mask.spel.ExpressionResolver;
-import com.ouo.mask.spel.SpelExpressionResolver;
-import com.ouo.mask.support.log.LogbackContextInitializer;
+import com.ouo.mask.spel.BraceSpelExpressionResolver;
+import com.ouo.mask.spel.DollarSpelExpressionResolver;
+import com.ouo.mask.spel.PoundSpelExpressionResolver;
 import com.ouo.mask.support.web.DesensitizationResponseBodyAdvice;
 import com.ouo.mask.util.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -30,12 +29,6 @@ import org.springframework.context.annotation.Import;
 //@RefreshScope //springcloud刷新@Value注解属性
 @Slf4j
 public class DesensitizationAutoConfiguration {
-
-    @Bean
-    @ConditionalOnClass(name = "ch.qos.logback.classic.LoggerContext")
-    public void initialize() {
-        new LogbackContextInitializer().initialize();
-    }
 
     /*@Bean
     @ConditionalOnMissingBean
@@ -58,7 +51,19 @@ public class DesensitizationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ExpressionResolver expressionResolver() {
-        return new SpelExpressionResolver();
+    public BraceSpelExpressionResolver braceSpelExpressionResolver() {
+        return new BraceSpelExpressionResolver();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DollarSpelExpressionResolver dollarSpelExpressionResolver() {
+        return new DollarSpelExpressionResolver();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public PoundSpelExpressionResolver poundSpelExpressionResolver() {
+        return new PoundSpelExpressionResolver();
     }
 }

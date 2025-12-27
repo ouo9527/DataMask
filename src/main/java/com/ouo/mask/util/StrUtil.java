@@ -1,15 +1,19 @@
 package com.ouo.mask.util;
 
+import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.CharUtil;
 import cn.hutool.core.util.ReUtil;
-import cn.hutool.core.util.StrUtil;
 
 /***********************************************************
  * 字符串工具
  * Author:   刘春
  * Date:     2024/4/15
  ***********************************************************/
-public class StringUtil extends StrUtil {
+public class StrUtil extends cn.hutool.core.util.StrUtil {
+    public final static String DEFAULT_ROOT_NAME = "_"; // 默认根节点
+    public final static String DEFAULT_START_ROOT_NODE = "<" + DEFAULT_ROOT_NAME + ">"; // 默认开始根节点
+    public final static String DEFAULT_END_ROOT_NODE = "</" + DEFAULT_ROOT_NAME + ">"; // 默认结束根节点
+
     public static boolean substringMatch(CharSequence str, int index, CharSequence substring) {
         if (index + substring.length() > str.length()) {
             return false;
@@ -77,5 +81,20 @@ public class StringUtil extends StrUtil {
             return false;
         }
         return ReUtil.isMatch("^(\\s*<\\?xml.*\\?>)?\\s*<\\w+>.*</\\w+>$", str);
+    }
+
+
+    /**
+     * 包装XML或XML片段
+     *
+     * @param xml
+     * @return
+     */
+    public static String wrapXml(String xml) {
+        return new StrBuilder()
+                .append(DEFAULT_START_ROOT_NODE)
+                .append(ReUtil.replaceAll(xml, "(\\s*<\\?xml.*\\?>)?", ""))
+                .append(DEFAULT_END_ROOT_NODE)
+                .toString();
     }
 }

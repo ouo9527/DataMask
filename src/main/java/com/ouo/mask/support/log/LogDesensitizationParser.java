@@ -5,11 +5,11 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
-import com.ouo.mask.spel.SpelExpressionMetaData;
-import com.ouo.mask.spel.SpelExpressionResolver;
+import com.ouo.mask.spel.BraceSpelExpressionResolver;
+import com.ouo.mask.spel.ExpressionResolver;
+import com.ouo.mask.util.JacksonUtil;
 import com.ouo.mask.util.SpringUtil;
-
-import java.util.Objects;
+import org.slf4j.helpers.MessageFormatter;
 
 /***********************************************************
  * 日志脱敏解析器
@@ -20,7 +20,8 @@ import java.util.Objects;
 public interface LogDesensitizationParser {
 
     /**
-     * 解析日志模板，并进行脱敏，其脱敏条件参数必须例如：
+     * 解析日志模板，采取轮询查找，即轮询从参数中取值，直到所有参数中都无法取到，那么此时取相应位置参数作为值，
+     * 若占位符索引超过参数个数，则有占位符视为null，否则视为{}；其次并对获取到值进行脱敏，例如：
      * 1）log.info("模板1即key-value成对：{#p0}、{#p1}...", val1, val2) --输出：val1、val2
      * 2）log.info("模板2即多key一个bean：{}、{#p0.name}...", bean) --输出：bean、bean的name属性值
      * 3）log.info("模板3即无key：{}、{}...", bean, val2) --输出：bean、val2
@@ -32,30 +33,42 @@ public interface LogDesensitizationParser {
      * @return
      */
     default String resolvePlaceholder(String loggerName, String template, final Object[] args) {
-        DesensitizationHandler desensitizedhandler = SpringUtil.getBean(DesensitizationHandler.class);
-        if (StrUtil.isBlank(template) || ArrayUtil.isEmpty(args) || null == desensitizedhandler) {
+        if (StrUtil.isBlank(template) || ArrayUtil.isEmpty(args)) {
             return template;
         }
-        SpelExpressionResolver expressionResolver = SpringUtil.getBean(SpelExpressionResolver.class);
-        final Object[] results = desensitizedhandler.desensitized(loggerName, SceneEnum.LOG, args);
-        return expressionResolver.getValueByLogTemplate(template, new SpelExpressionMetaData(results), (e, i, c) -> {
-            Object val = null;
-            if (StrUtil.isEmpty(e)) { // 只含{}占位符
-                val = i < results.length ? results[i] : "{}";
-            } else if (1 == results.length || i < results.length) { // 当参数仅且只有一个时，则无论多少个占位符，都始终指向该参数取值，否则有效占位符表达式的值为与之对应的参数
-                int n = 1 == results.length ? 0 : i; //索引位
-                Object p = results[n]; // 参数
-                val = BeanUtil.getFieldValue(p, e); // 获取对象属性
-                if (null == val) { // 若获取为空，则判断是否是字符类型
-                    try {
-                        val = !(p instanceof CharSequence) || StrUtil.equals((CharSequence) p, Objects.toString(args[n], ""))
-                                ? desensitizedhandler.desensitized(SceneEnum.LOG, e, p) : p;
-                    } catch (RuntimeException ex) {
-
+        DesensitizationHandler desensitizedhandler = SpringUtil.getBean(DesensitizationHandler.class, true);
+        // 对原数据进行脱敏
+        final Object[] results = null == desensitizedhandler ? args : desensitizedhandler.desensitized(loggerName, SceneEnum.LOG, args);
+        ExpressionResolver expressionResolver = SpringUtil.getBean(BraceSpelExpressionResolver.class, true);
+        if (null != expressionResolver) {
+            return expressionResolver.exe(template, 1 == results.length ? results[0] : results, String.class, (expression, result, e) -> {
+                int index = expression.getPlaceholderIndex();
+                if (StrUtil.isBlank(expression.getExpressionString()))
+                    return index >= results.length ? "{}" : results[index];
+                if (null == e && null != result) return result; // Spring SpEl可以解析
+                Object val = null;
+                for (int i = 0; i < results.length; i++) {
+                    if (results[i] instanceof CharSequence) {
+                        try {
+                            val = BeanUtil.getProperty(JacksonUtil.toBean((String) results[i], Object.class), expression.getExpressionString());
+                        } catch (Exception ex) {
+                            // 非json或xml字符串
+                        }
                     }
+                    // 取到值
+                    if (null != val) break;
                 }
-            } else return "{}";
-            return Objects.toString(val, null);
-        });
+                // 轮询后还是取不到值，使用表达式索引位置取对应值，然后进行脱敏
+                if (null == val && index < results.length) {
+                    String fieldName = StrUtil.subAfter(expression.getExpressionString(), ".", true);
+                    fieldName = StrUtil.subBetween(StrUtil.blankToDefault(fieldName, expression.getExpressionString()), "[", "]");
+                    val = desensitizedhandler.desensitized(loggerName, SceneEnum.LOG, StrUtil.trim(StrUtil.blankToDefault(fieldName,
+                            expression.getExpressionString())), results[index]);
+                }
+
+                return val;
+            });
+        }
+        return MessageFormatter.arrayFormat(template, results).getMessage();
     }
 }

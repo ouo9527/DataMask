@@ -48,3 +48,6 @@ ouo:
         #正则表达式，注：yml配置中无需使用\转义符，只需符合正则语法即可，但properties配置文件中正则特殊符号最好使用1个反斜杠进行转义
         pattern: (\d{1,}.).*(.\d{1,})
         rv: $1****$2
+      acct_name:
+        mode: mask
+        type: full_name

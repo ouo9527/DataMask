@@ -4,8 +4,8 @@ import cn.hutool.core.annotation.AnnotationUtil;
 import com.ouo.mask.annotation.Desensitization;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.handler.DesensitizationHandler;
-import com.ouo.mask.util.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -27,11 +27,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @Slf4j
 public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
+    @Autowired(required = false)
     private DesensitizationHandler handler;
-
-    public DesensitizationResponseBodyAdvice(DesensitizationHandler handler) {
-        this.handler = handler;
-    }
+    @Autowired(required = false)
+    private UserMaskPermission userMaskPermission;
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
@@ -47,12 +46,7 @@ public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Obj
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
-        UserMaskPermission permission = null;
-        try {
-            permission = SpringUtil.getBean(UserMaskPermission.class);
-        } catch (RuntimeException e) {
-        }
-        return (null != permission && permission.hasNotPermission(request)) ? body :
+        return (null != userMaskPermission && userMaskPermission.hasNotPermission(request)) ? body :
                 handler.desensitized(returnType.getDeclaringClass().getName(), SceneEnum.WEB, body);
     }
 }

@@ -17,17 +17,23 @@ import java.util.Properties;
 @Getter
 public class SpelExpressionMetaData {
     //@Accessors
-    private Properties sys; //系统环境变量
-    private Properties env; //应用配置
-    private Object target; //目标对象
-    private Class targetClass; //目标类
-    private String targetCName; //目标类名称（包含包名）
-    private String targetCSName; //目标类名称（不包含包名）
-    private Method method; //被调用的方法
-    private String methodName; //被调用的方法名
-    private Object[] args; //被调用的方法实参
-    private String[] parameterNames; //被调用的方法参数名
+    private Properties sys; // 系统环境变量
+    private Properties env; // 应用配置
+    private Object target; // 目标对象
+    private Class targetClass; // 目标类
+    private String targetCName; // 目标类名称（包含包名）
+    private String targetCSName; // 目标类名称（不包含包名）
+    private Method method; // 被调用的方法
+    private String methodName; // 被调用的方法名
+    private Object[] args; // 被调用的方法实参
+    private String[] parameterNames; // 被调用的方法参数名
 
+    /**
+     * @param target 目标对象
+     * @param method 被调用的方法
+     * @param env    应用配置
+     * @param args   被调用的方法实参
+     */
     public SpelExpressionMetaData(Object target, Method method, Properties env, Object[] args) {
         this.target = target;
         this.targetClass = null == target ? null : target.getClass();
@@ -50,6 +56,13 @@ public class SpelExpressionMetaData {
         }
     }
 
+    /**
+     *
+     * @param target    目标对象
+     * @param method    被调用的方法
+     * @param env       应用配置
+     * @param args      被调用的方法实参
+     */
     public SpelExpressionMetaData(Object target, Method method, ConfigurableEnvironment env, Object[] args) {
         this(target, method, args);
         // 获取所有文件
@@ -60,11 +73,29 @@ public class SpelExpressionMetaData {
         }
     }
 
+    /**
+     *
+     * @param target    目标对象
+     * @param method    被调用的方法
+     * @param args      被调用的方法实参
+     */
     public SpelExpressionMetaData(Object target, Method method, Object[] args) {
         this(target, method, (Properties) null, args);
     }
 
+    /**
+     *
+     * @param args 被调用的方法实参
+     */
     public SpelExpressionMetaData(Object[] args) {
         this(null, null, (Properties) null, args);
+    }
+
+    /**
+     *
+     * @param arg 被调用的方法实参
+     */
+    public SpelExpressionMetaData(Object arg) {
+        this(null, null, (Properties) null, new Object[]{arg});
     }
 }

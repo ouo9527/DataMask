@@ -3,7 +3,6 @@ package com.ouo.mask.util;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.ReUtil;
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.Digester;
@@ -420,7 +419,7 @@ public abstract class DesensitizedUtil {
     private static boolean matches(SceneEnum scene, DesensitizationRule rule, String fieldName, String data) {
         log.debug("校验是否不能脱敏：脱敏场景={}, 脱敏规则={}, 待脱敏字段={}", scene, rule, fieldName);
         //通过驼峰匹配
-        return !((StrUtil.isBlank(data) || null == rule || !StrUtil.equals(StringUtil.toCamelCase2(fieldName), StringUtil.toCamelCase2(rule.getField()))
+        return !((StrUtil.isBlank(data) || null == rule || !StrUtil.equals(StrUtil.toCamelCase2(fieldName), StrUtil.toCamelCase2(rule.getField()))
                 || null == scene) || (SceneEnum.ALL != scene && SceneEnum.ALL != rule.getScene() && null != rule.getScene() && scene != rule.getScene()));
     }
 }

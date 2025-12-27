@@ -8,6 +8,11 @@ import com.ouo.mask.handler.DesensitizationHandler;
 
 import java.lang.reflect.Field;
 
+/***********************************************************
+ * 采用Unsafe处理字段脱敏
+ * Author:   刘春
+ * Date:     2025/12/7
+ ***********************************************************/
 public class DesensitizationUnsafeField extends UnsafeField {
 
     private final SceneEnum sceneEnum;

@@ -18,6 +18,11 @@ import org.springframework.core.env.PropertySources;
 
 import java.util.Map;
 
+/***********************************************************
+ * 针对于Spring（非Spring Boot）脱敏配置加载并解析
+ * Author:   刘春
+ * Date:     2025/12/7
+ ***********************************************************/
 @Slf4j
 public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostProcessor, EnvironmentAware, Ordered {
 
@@ -34,12 +39,12 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
             Dict dict = this.processProperties(placeholderConfigurer.getAppliedPropertySources()); // 脱敏属性配置
             if (environment instanceof ConfigurableEnvironment) {
                 dict.putAll(this.processProperties(((ConfigurableEnvironment) environment).getPropertySources()));
-                DesensitizationProperties desensitizationProperties = new DesensitizationProperties();
-                desensitizationProperties.setStrategy(dict.getByPath(DesensitizationProperties.STRATEGY, DesensitizationStrategy.class));
-                Object rules = dict.getByPath(DesensitizationProperties.RULES);
-                if (rules instanceof Map) desensitizationProperties.setRules((Map<String, ?>) rules);
-                beanFactory.registerSingleton(StrUtil.toCamelCase(DesensitizationProperties.class.getSimpleName()), desensitizationProperties);
             }
+            DesensitizationProperties desensitizationProperties = new DesensitizationProperties();
+            desensitizationProperties.setStrategy(dict.getByPath(DesensitizationProperties.STRATEGY, DesensitizationStrategy.class));
+            Object rules = dict.getByPath(DesensitizationProperties.RULES);
+            if (rules instanceof Map) desensitizationProperties.setRules((Map<String, ?>) rules);
+            beanFactory.registerSingleton(StrUtil.toCamelCase(DesensitizationProperties.class.getSimpleName()), desensitizationProperties);
         }
     }
 

@@ -1,6 +1,6 @@
 package com.ouo.mask.spel;
 
-import com.ouo.mask.util.StringUtil;
+import com.ouo.mask.util.StrUtil;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionException;
 import org.springframework.expression.ParseException;
@@ -163,7 +163,7 @@ public class EscapeSpelExpressionParser extends SpelExpressionParser {
         if (templateExpression.isEmpty()) {
             return new LiteralExpression("");
         } else {
-            List<Expression> expressions = this.parseExpressions(templateExpression, context);
+            List<Object> expressions = this.parseExpressions(templateExpression, context);
             return new CompositeStringExpressionWrap(templateExpression, expressions);
         }
     }
@@ -187,15 +187,14 @@ public class EscapeSpelExpressionParser extends SpelExpressionParser {
      * @return the parsed expressions
      * @throws ParseException when the expressions cannot be parsed
      */
-    private List<Expression> parseExpressions(String templateExpression, ParserContext context) throws ParseException {
+    private List<Object> parseExpressions(String templateExpression, ParserContext context) throws ParseException {
 
         String prefix = context.getExpressionPrefix();
         String suffix = context.getExpressionSuffix();
-        if (StringUtil.startWith(prefix, ESCAPE_CHAR) ||
-                StringUtil.endWith(suffix, ESCAPE_CHAR))
+        if (StrUtil.startWith(prefix, ESCAPE_CHAR) || StrUtil.endWith(suffix, ESCAPE_CHAR))
             throw new ExpressionException("Template expressions cannot start or end with an escape character such as \\\\, \\{}, \\{}\\, etc.");
 
-        List<Expression> expressions = new ArrayList<>();
+        List<Object> expressions = new ArrayList<>();
 
         int startIdx = 0;
         int placeholderIndex = 0;
@@ -207,7 +206,8 @@ public class EscapeSpelExpressionParser extends SpelExpressionParser {
                 // an inner expression was found - this is a composite
                 if (prefixIndex > startIdx) {
                     boolean isEscaped = isEscapedDelimeter(templateExpression, prefixIndex) && !isDoubleEscaped(templateExpression, prefixIndex);
-                    expressions.add(new LiteralExpression(templateExpression.substring(startIdx, prefixIndex + (isEscaped ? prefix.length() : 0))));
+                    expressions.add(new LiteralExpression(StrUtil.replaceLast(templateExpression.substring(startIdx, prefixIndex + (isEscaped ? prefix.length() : 0))
+                            , "\\{", "{")));
                     if (isEscaped) {
                         startIdx = prefixIndex + prefix.length();
                         continue;
@@ -222,13 +222,12 @@ public class EscapeSpelExpressionParser extends SpelExpressionParser {
                 }
                 if (suffixIndex == afterPrefixIndex) {
                     // No expression
-                    expressions.add(new LiteralExpressionWrap(placeholderIndex++, "")); //prefix + suffix
+                    expressions.add(new TemplateExpression(new LiteralExpression(""), placeholderIndex++)); //prefix + suffix
                 } else {
                     String expr = templateExpression.substring(prefixIndex + prefix.length(), suffixIndex);
-                    expr = expr.trim();
                     // expr.isEmpty() No expression
-                    expressions.add(expr.isEmpty() ? new LiteralExpressionWrap(placeholderIndex++, "") :
-                            new SpelExpressionWrap(placeholderIndex++, this.doParseExpression(expr, context)));
+                    expressions.add(new TemplateExpression(expr.isEmpty() ? new LiteralExpression(expr) :
+                            this.doParseExpression(expr, context), placeholderIndex++));
                 }
                 startIdx = suffixIndex + suffix.length();
             } else {

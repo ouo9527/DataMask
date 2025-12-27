@@ -1,95 +1,62 @@
 package com.ouo.mask.spel;
 
+import cn.hutool.core.collection.CollUtil;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionException;
 import org.springframework.expression.TypedValue;
 import org.springframework.expression.common.CompositeStringExpression;
 import org.springframework.expression.common.ExpressionUtils;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
-public class CompositeStringExpressionWrap extends ExpressionWrap {
+/***********************************************************
+ * 多个模板表达式处理
+ * Author:   刘春
+ * Date:     2025/12/7
+ ***********************************************************/
+class CompositeStringExpressionWrap extends CompositeStringExpression {
 
-    private List<Expression> expressions;
+    private List<Object> expressions;
 
-    public CompositeStringExpressionWrap(String templateExpression, List<Expression> expressions) {
-        super(-1, new CompositeStringExpression(templateExpression, expressions.toArray(new Expression[]{})));
+    public CompositeStringExpressionWrap(String templateExpression, List<Object> expressions) {
+        super(templateExpression, new Expression[]{});
         this.expressions = expressions;
+
     }
 
-    @Override
-    public Object getValue(PlaceholderExpressionParser expressionParser) {
-        StringBuilder sb = new StringBuilder();
-        for (Expression expression : this.expressions) {
-            Object value = null;
-            if (expression instanceof ExpressionWrap) {
-                value = ((ExpressionWrap) expression).getValue(expressionParser);
-            } else value = expression.getValue();
-            sb.append(value);
+    /**
+     * 从多个模板表达式获取值
+     *
+     * @param context    表达式上下文
+     * @param resultType 期望结果类型
+     * @param callback   模板表达式回调处理
+     * @param <R>        返回类型
+     * @return 返回表达式执行结果
+     */
+    public <R> R getValue(EvaluationContext context, @Nullable Class<R> resultType, @Nullable TemplateExpressionCallback callback) {
+        if (CollUtil.isEmpty(this.expressions)) return null;
+        Object val = null;
+        if (1 == this.expressions.size()) val = this.getValue(this.expressions.get(0), context, resultType, callback);
+        else {
+            StringBuilder sb = new StringBuilder();
+            for (Object expression : this.expressions) {
+                sb.append(this.getValue(expression, context, resultType, callback));
+            }
+            val = sb.toString();
         }
-        return sb.toString();
+        return ExpressionUtils.convertTypedValue(context, new TypedValue(val), resultType);
     }
 
-    @Override
-    public <T> T getValue(Class<T> expectedResultType, PlaceholderExpressionParser<T> expressionParser) {
-        Object value = getValue(expressionParser);
-        return ExpressionUtils.convertTypedValue(null, new TypedValue(value), expectedResultType);
-    }
-
-    @Override
-    public Object getValue(Object rootObject, PlaceholderExpressionParser expressionParser) {
-        StringBuilder sb = new StringBuilder();
-        for (Expression expression : this.expressions) {
-            Object value = null;
-            if (expression instanceof ExpressionWrap) {
-                value = ((ExpressionWrap) expression).getValue(rootObject, expressionParser);
-            } else value = expression.getValue(rootObject);
-            sb.append(value);
+    private <R> R getValue(Object expression, EvaluationContext context, @Nullable Class<R> resultType, @Nullable TemplateExpressionCallback callback) {
+        if (expression instanceof TemplateExpression) {
+            ((TemplateExpression) expression).setContext(context);
+            return ((TemplateExpression) expression).getValue(resultType, callback);
+        } else if (expression instanceof Expression) {
+            if (null == context) return ((Expression) expression).getValue(resultType);
+            else return ((Expression) expression).getValue(context, resultType);
         }
-        return sb.toString();
-    }
-
-    @Override
-    public <T> T getValue(Object rootObject, Class<T> expectedResultType, PlaceholderExpressionParser<T> expressionParser) {
-        Object value = getValue(rootObject, expressionParser);
-        return ExpressionUtils.convertTypedValue(null, new TypedValue(value), expectedResultType);
-    }
-
-    @Override
-    public Object getValue(EvaluationContext context, PlaceholderExpressionParser expressionParser) {
-        StringBuilder sb = new StringBuilder();
-        for (Expression expression : this.expressions) {
-            Object value = null;
-            if (expression instanceof ExpressionWrap) {
-                value = ((ExpressionWrap) expression).getValue(context, expressionParser);
-            } else value = expression.getValue(context);
-            sb.append(value);
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public <T> T getValue(EvaluationContext context, Class<T> expectedResultType, PlaceholderExpressionParser<T> expressionParser) {
-        Object value = getValue(context, expressionParser);
-        return ExpressionUtils.convertTypedValue(context, new TypedValue(value), expectedResultType);
-    }
-
-    @Override
-    public Object getValue(EvaluationContext context, Object rootObject, PlaceholderExpressionParser expressionParser) {
-        StringBuilder sb = new StringBuilder();
-        for (Expression expression : this.expressions) {
-            Object value = null;
-            if (expression instanceof ExpressionWrap) {
-                value = ((ExpressionWrap) expression).getValue(context, rootObject, expressionParser);
-            } else value = expression.getValue(context, rootObject);
-            sb.append(value);
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public <T> T getValue(EvaluationContext context, Object rootObject, Class<T> expectedResultType, PlaceholderExpressionParser<T> expressionParser) {
-        Object value = getValue(context, rootObject, expressionParser);
-        return ExpressionUtils.convertTypedValue(context, new TypedValue(value), expectedResultType);
+        throw new ExpressionException("the expression is not of type Expression or TemplateExpression, nor of their subclasses.");
     }
 }

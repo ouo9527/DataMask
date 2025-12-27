@@ -4,13 +4,12 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.map.MapUtil;
-import cn.hutool.core.util.StrUtil;
 import com.ouo.mask.annotation.Hash;
 import com.ouo.mask.enums.ModeEnum;
 import com.ouo.mask.enums.SceneEnum;
 import com.ouo.mask.enums.SensitiveTypeEnum;
 import com.ouo.mask.rule.*;
-import com.ouo.mask.util.StringUtil;
+import com.ouo.mask.util.StrUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +57,7 @@ public class DesensitizationProperties {
         this.rules = new HashMap<>();
         for (Map.Entry<String, ?> entry : rules.entrySet()) {
             if (entry.getValue() instanceof Map) {
-                this.rules.put(StringUtil.toCamelCase2(entry.getKey()), this.convert(entry.getKey(), (Map) entry.getValue()));
+                this.rules.put(StrUtil.toCamelCase2(entry.getKey()), this.convert(entry.getKey(), (Map) entry.getValue()));
             }
         }
     }

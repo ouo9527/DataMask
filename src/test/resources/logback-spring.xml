@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <conversionRule conversionWord="msg" converterClass="com.ouo.mask.support.log.LogbackDesensitizeConverter"/>
+    <!-- 定义日志文件存储的路径，可以使用Spring的属性占位符 -->
+    <property name="LOGS_PATH" value="${user.home}/logs"/>
+
+    <!-- Console Appender -->
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="Console"/>
+    </root>
+</configuration>
