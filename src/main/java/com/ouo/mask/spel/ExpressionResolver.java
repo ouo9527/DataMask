@@ -114,10 +114,12 @@ public interface ExpressionResolver {
             }
         }
 
-        if (ctxData instanceof Map) {
-            for (Object entry : ((Map) ctxData).entrySet()) {
-                if (entry instanceof Map.Entry) {
-                    context.setVariable(ObjUtil.toString(((Map.Entry) entry).getKey()), ((Map.Entry) entry).getValue());
+        if (ctxData instanceof SpelExpressionMetaData) {
+            context.setVariable("result", ((SpelExpressionMetaData) ctxData).getResult());
+        } else if (ctxData instanceof Map) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) ctxData).entrySet()) {
+                if (null != entry) {
+                    context.setVariable(ObjUtil.toString(entry.getKey()), entry.getValue());
                 }
             }
         }
