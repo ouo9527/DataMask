@@ -106,16 +106,17 @@ public interface ExpressionResolver {
                 .build();
 
         // 设置上下文属性
-        if (ArrayUtil.isNotEmpty(args)) {
-            for (int i = 0; i < args.length; i++) {
-                if (null == args[i]) continue;
-                context.setVariable("p" + i, args[i]);
-                context.setVariable("a" + i, args[i]);
-            }
+        for (int i = 0; i < ArrayUtil.length(args); i++) {
+            context.setVariable("p" + i, args[i]);
+            context.setVariable("a" + i, args[i]);
         }
 
         if (ctxData instanceof SpelExpressionMetaData) {
             context.setVariable("result", ((SpelExpressionMetaData) ctxData).getResult());
+            String[] parameterNames = ((SpelExpressionMetaData) ctxData).getParameterNames();
+            for (int i = 0; i < ArrayUtil.length(parameterNames); i++) {
+                context.setVariable(parameterNames[i], ArrayUtil.get(args, i));
+            }
         } else if (ctxData instanceof Map) {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) ctxData).entrySet()) {
                 if (null != entry) {

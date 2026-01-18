@@ -48,8 +48,10 @@ public class DesensitizationProperties {
     // 是否启用脱敏，默认开启
     private boolean enabled = true;
     // 脱敏策略
+    //@NestedConfigurationProperty
     private DesensitizationStrategy strategy;
     // 脱敏规则
+    //@NestedConfigurationProperty
     private Map<String, DesensitizationRule> rules;
 
     public void setRules(Map<String, ?> rules) {

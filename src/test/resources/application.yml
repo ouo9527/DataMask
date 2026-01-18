@@ -9,7 +9,8 @@ ouo:
       packages: com.ouo.mask,xx.yy
       #effect-date:
       #expiry-date:
-    #字段敏规则
+
+    # 脱敏规则（key键为字段名，value值为对应的脱敏规则）
     rules:
       addr:
         mode: empty
@@ -51,3 +52,6 @@ ouo:
       acct_name:
         mode: mask
         type: full_name
+
+
+

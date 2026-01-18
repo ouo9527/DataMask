@@ -1,0 +1,179 @@
+{
+  "properties": [
+    {
+      "name": "ouo.desens.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用脱敏",
+      "sourceType": "com.ouo.mask.config.DesensitizationProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "ouo.desens.strategy",
+      "type": "com.ouo.mask.rule.DesensitizationStrategy",
+      "description": "脱敏策略",
+      "sourceType": "com.ouo.mask.config.DesensitizationProperties"
+    },
+    {
+      "name": "ouo.desens.strategy.packages",
+      "type": "java.lang.String[]",
+      "description": "脱敏范围即配置包路径，多个值时以英文逗号隔开",
+      "sourceType": "com.ouo.mask.rule.DesensitizationStrategy"
+    },
+    {
+      "name": "ouo.desens.strategy.effect-date",
+      "type": "java.lang.String",
+      "description": "脱敏策略生效日期，日前格式例如：'yyyy-MM-dd HH:mm:ss'，'yyyy-MM-dd','yyyyMMdd'等常见格式都支持",
+      "sourceType": "com.ouo.mask.rule.DesensitizationStrategy"
+    },
+    {
+      "name": "ouo.desens.strategy.expiry-date",
+      "type": "java.lang.String",
+      "description": "脱敏策略失效日期，日前格式例如：'yyyy-MM-dd HH:mm:ss'，'yyyy-MM-dd','yyyyMMdd'等常见格式都支持",
+      "sourceType": "com.ouo.mask.rule.DesensitizationStrategy"
+    },
+    {
+      "name": "ouo.desens.rules",
+      "type": "java.util.Map<java.lang.String, com.ouo.mask.rule.DesensitizationRule>",
+      "description": "脱敏规则（key键为字段名，value值为对应的脱敏规则）",
+      "sourceType": "com.ouo.mask.config.DesensitizationProperties"
+    },
+    {
+      "name": "ouo.desens.rules.*.mode",
+      "type": "com.ouo.mask.enums.ModeEnum",
+      "description": "脱敏模式：置空empty、哈希hash、正则regex、替换repl、掩盖mask",
+      "sourceType": "com.ouo.mask.rule.DesensitizationRule",
+      "defaultValue": "mask"
+    },
+    {
+      "name": "ouo.desens.rules.*.scene",
+      "type": "com.ouo.mask.enums.SceneEnum",
+      "description": "脱敏场景：日志log、网页web、全部all，默认all",
+      "sourceType": "com.ouo.mask.rule.DesensitizationRule",
+      "defaultValue": "all"
+    },
+    {
+      "name": "ouo.desens.rules.*.algorithm",
+      "type": "com.ouo.mask.annotation.Hash$AlgorithmEnum",
+      "description": "Hash算法",
+      "sourceType": "com.ouo.mask.rule.HashDesensitizationRule",
+      "defaultValue": "sm3"
+    },
+    {
+      "name": "ouo.desens.rules.*.salt",
+      "type": "java.lang.String",
+      "description": "盐",
+      "sourceType": "com.ouo.mask.rule.HashDesensitizationRule"
+    },
+    {
+      "name": "ouo.desens.rules.*.type",
+      "type": "com.ouo.mask.enums.SensitiveTypeEnum",
+      "description": "敏感类型，采用内置脱敏配置",
+      "sourceType": "com.ouo.mask.rule.MaskDesensitizationRule"
+    },
+    {
+      "name": "ouo.desens.rules.*.show",
+      "type": "com.ouo.mask.rule.MaskDesensitizationRule$CustomShow",
+      "description": "自定义显示",
+      "sourceType": "com.ouo.mask.rule.MaskDesensitizationRule"
+    },
+    {
+      "name": "ouo.desens.rules.*.show.pre",
+      "type": "java.lang.Integer",
+      "description": "前几位显示",
+      "sourceType": "com.ouo.mask.rule.MaskDesensitizationRule$CustomShow"
+    },
+    {
+      "name": "ouo.desens.rules.*.show.suf",
+      "type": "java.lang.Integer",
+      "description": "后几位显示",
+      "sourceType": "com.ouo.mask.rule.MaskDesensitizationRule$CustomShow"
+    },
+    {
+      "name": "ouo.desens.rules.*.pattern",
+      "type": "java.lang.String",
+      "description": "正则表达式",
+      "sourceType": "com.ouo.mask.rule.RegexDesensitizationRule"
+    },
+    {
+      "name": "ouo.desens.rules.*.rv",
+      "type": "java.lang.String",
+      "description": "替换值",
+      "sourceType": "com.ouo.mask.rule.RegexDesensitizationRule"
+    },
+    {
+      "name": "ouo.desens.rules.*.surplus",
+      "type": "com.ouo.mask.rule.ReplDesensitizationRule$Posn",
+      "description": "剩余位置替换",
+      "sourceType": "com.ouo.mask.rule.ReplDesensitizationRule"
+    },
+    {
+      "name": "ouo.desens.rules.*.posns",
+      "type": "java.util.List<com.ouo.mask.rule.ReplDesensitizationRule.Posn>",
+      "description": "按位置替换",
+      "sourceType": "com.ouo.mask.rule.ReplDesensitizationRule"
+    },
+    {
+      "name": "ouo.desens.rules.*.posns[].fixed",
+      "type": "java.lang.Boolean",
+      "description": "是否固定值替换",
+      "sourceType": "com.ouo.mask.rule.ReplDesensitizationRule$Posn",
+      "defaultValue": true
+    },
+    {
+      "name": "ouo.desens.rules.*.posns[].i",
+      "type": "java.lang.Integer",
+      "description": "第几位",
+      "sourceType": "com.ouo.mask.rule.ReplDesensitizationRule$Posn"
+    },
+    {
+      "name": "ouo.desens.rules.*.posns[].rv",
+      "type": "java.lang.String",
+      "description": "替换值",
+      "sourceType": "com.ouo.mask.rule.ReplDesensitizationRule$Posn"
+    }
+  ],
+  "hints": [
+    {
+      "name": "ouo.desens.rules.*.mode",
+      "values": [
+        {
+          "value": "empty",
+          "description": "置空"
+        },
+        {
+          "value": "hash",
+          "description": "哈希"
+        },
+        {
+          "value": "regex",
+          "description": "正则"
+        },
+        {
+          "value": "repl",
+          "description": "替换"
+        },
+        {
+          "value": "mask",
+          "description": "掩盖"
+        }
+      ]
+    },
+    {
+      "name": "ouo.desens.rules.*.scene",
+      "values": [
+        {
+          "value": "web",
+          "description": "web网页场景"
+        },
+        {
+          "value": "log",
+          "description": "log日志场景"
+        },
+        {
+          "value": "all",
+          "description": "web和log场景"
+        }
+      ]
+    }
+  ]
+}

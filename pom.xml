@@ -60,17 +60,18 @@
         <spring.version>5.3.34</spring.version>
         <spring-boot.version>2.7.18</spring-boot.version>
         <!-- json<->bean -->
-        <fastjson2.version>2.0.8</fastjson2.version>
+        <!--<fastjson2.version>2.0.8</fastjson2.version>-->
         <!-- xml<->bean -->
         <!--<dom4j.version>2.1.4</dom4j.version>-->
         <!-- XPath -->
         <!--<jaxen.version>1.1.6</jaxen.version>-->
+        <jackson.version>2.13.5</jackson.version>
         <!-- Hutool -->
         <hutool.version>5.8.38</hutool.version>
         <!-- bouncycastle：密钥算法 -->
         <bouncycastle.version>1.75</bouncycastle.version>
         <!-- 高性能深拷贝：Kryo、FST(2.x-JDK1.7及以上、3.x-JDK14及以上) -->
-        <fst.version>2.57</fst.version>
+        <!--<fst.version>2.57</fst.version>-->
         <kryo.version>5.6.2</kryo.version>
 
         <!-- jmh：单元级性能压测 -->
@@ -106,6 +107,22 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
                 <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Jackson BOM依赖 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Hutool BOM依赖 -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-bom</artifactId>
+                <version>${hutool.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -166,11 +183,6 @@
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-afterburner</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.fastjson2</groupId>
-            <artifactId>fastjson2</artifactId>
-            <version>2.0.20</version>
-        </dependency>
         <!-- 高性能深拷贝：Kryo、FST -->
         <!--<dependency>
             <groupId>de.ruedigermoeller</groupId>
@@ -187,7 +199,6 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-crypto</artifactId>
-            <version>${hutool.version}</version>
         </dependency>
         <!-- 加密 -->
         <dependency>
@@ -208,10 +219,18 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- 类冗余代码生成（如：getter/setter、toString等） -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <!-- 单元测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

@@ -1,5 +1,6 @@
 package com.ouo.mask.spel;
 
+import cn.hutool.core.util.ObjUtil;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.Expression;
@@ -78,7 +79,9 @@ public class TemplateExpression {
             if (null == callback) throw e;
         }
         if (null != callback) val = callback.process(this, val, exception);
-
+        if (String.class.equals(resultType)) { // CharSequence.class.isAssignableFrom(resultType)
+            return null == val ? null : (R) ObjUtil.toString(val);
+        }
         return ExpressionUtils.convertTypedValue(context, new TypedValue(val), resultType);
     }
 }

@@ -22,8 +22,5 @@ public abstract class DesensitizationRule {
     protected String field;
     //模式
     //@JSONField(serializeFeatures = JSONWriter.Feature.WriteEnumsUsingName)
-    protected ModeEnum mode;
-
-    private void setMode(ModeEnum mode) {
-    }
+    protected ModeEnum mode = ModeEnum.MASK;
 }

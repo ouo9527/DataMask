@@ -62,11 +62,12 @@ public class SpelTest {
         log.info("SpEL普通表达式2(通过元数据)：{}", expressionResolver.exe("{args[0].addr}", metaData));
         log.info("SpEL普通表达式3(通过元数据)：{}", expressionResolver.exe("{name}", user));
         log.info("SpEL普通表达式4(通过元数据)：{}", expressionResolver.exe("{#a0.name}", new User[]{user}));
+        //log.info("SpEL普通表达式4(通过元数据)：{}", expressionResolver.exe("{#a0}", new User[]{user}, String.class));
         log.info("SpEL普通表达式5(通过非元数据)：{}", expressionResolver.exe("{#addr}", map));
         log.info("解析SpEL花括号模板表达式1：{}", expressionResolver.exe("亲爱的【{#root.name}】您好，欢迎来到【{addr}】!", user, String.class));
         log.info("解析SpEL花括号模板表达式2：{}", expressionResolver.exe("亲爱的【{[name]}】您好，欢迎来到【{[addr]}】!", map, String.class));
-        // Json对象无法使用普通方式获取
-        log.info("解析SpEL花括号模板表达式3：{}", expressionResolver.exe("亲爱的【{[name]}】您好，欢迎来到【{[0]}】!",
+        // Json对象无法使用普通方式获取，如：[name]
+        log.info("解析SpEL花括号模板表达式3：{}", expressionResolver.exe("亲爱的【{#a0}】您好，欢迎来到【】!",
                 objectMapper.readTree("{\"name\":\"张三\",\"addr\":\"深圳\"}"),
                 String.class/*, ((expression, result, e) -> BeanUtil.getProperty(context.getRootObject(), expression.getExpressionString()))*/));
         /*SpelExpressionParser parser = new SpelExpressionParser();

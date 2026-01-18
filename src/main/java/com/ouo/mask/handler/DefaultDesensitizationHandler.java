@@ -80,7 +80,12 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
 
     @Override
     public <T> T desensitized(SceneEnum scene, String fieldName, T data) {
-        return this.desensitized(scene, fieldName, data, null);
+        try {
+            return this.desensitized(scene, fieldName, data, null);
+        } catch (Throwable e) {
+            log.warn("【{}】字段脱敏异常：{}", fieldName, e.toString());
+            return data;
+        }
     }
 
     @Override
@@ -94,10 +99,15 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
         // 静态字段属于类属性即类成员共享，若修改后会造成共享不一致问题，其次常量字段即编译时常量，若修改后会造成不可见问题即通过get方法访问和直接访问字段，其值是不一样的，故脱敏都不建议修改
         if (null == field || null == data || ModifierUtil.isStatic(field)
                 || ModifierUtil.hasModifier(field, ModifierUtil.ModifierType.FINAL)) return data;
-        return this.desensitized(scene, field.getName(), data, Arrays.stream(field.getAnnotations())
-                .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
-                        || a instanceof Repl || a instanceof Mask)
-                .findAny().orElse(null));
+        try {
+            return this.desensitized(scene, field.getName(), data, Arrays.stream(field.getAnnotations())
+                    .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
+                            || a instanceof Repl || a instanceof Mask)
+                    .findAny().orElse(null));
+        } catch (Throwable e) {
+            log.warn("【{}】字段脱敏异常：{}", field.getName(), e.toString());
+            return data;
+        }
     }
 
     @Override
@@ -109,7 +119,12 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
     @Override
     public <T> T desensitized(String context, SceneEnum scene, T data) {
         if (!this.supports(context)) return data;
-        return this.desensitized(scene, null, data, null);
+        try {
+            return this.desensitized(scene, null, data, null);
+        } catch (Throwable e) {
+            log.warn("【{}】类脱敏异常：{}", ClassUtil.getClassName(data, false), e.toString());
+            return data;
+        }
     }
 
     /**
@@ -269,6 +284,7 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                     JacksonUtil.toXmlString(doc), annotation), doc.getClass());
         } catch (Exception e) {
             // 无法转xml
+            log.warn("XML字符串转Document类异常：{}", e.toString());
         }
         return doc;
     }
@@ -317,7 +333,7 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                     constructor.setAccessible(true);
                     return (T) constructor.newInstance(this.desensitized(scene, fieldName, Convert.convert(String.class, data), annotation));
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    log.debug("String转{}异常：", constructor.getName(), e);
+                    log.warn("String转{}异常：{}", constructor.getName(), e.toString());
                 }
             }
             return data;
@@ -377,7 +393,7 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
             if (StrUtil.isBlank(rootName)) {
                 try {
                     parser.close();
-                } catch (IOException e) {
+                } catch (IOException ignore) {
                     //log.debug("【{}】XML片段流关闭异常：", val, e);
                 }
 
@@ -396,8 +412,8 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                 return JacksonUtil.toXmlStringWithDefaultPrettyPrinter(result, rootName);
             }
             return JacksonUtil.toXmlString(result, rootName);
-        } catch (Exception e) {
-            //log.debug("【{}】XML脱敏异常：", val, e);
+        } catch (Exception ignore) {
+            //log.warn("【{}】XML脱敏异常：", val, e);
             isNext = true;
         }
 
@@ -411,8 +427,8 @@ public class DefaultDesensitizationHandler implements DesensitizationHandler {
                     }
                     return JacksonUtil.toJsonString(data);
                 }
-            } catch (Exception e) {
-                //log.debug("【{}】JSON脱敏异常：", val, e);
+            } catch (Exception ignore) {
+                //log.warn("【{}】JSON脱敏异常：", val, e);
             }
         }
 

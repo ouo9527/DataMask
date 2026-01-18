@@ -22,8 +22,8 @@ public class User extends BasicUser {
     String name;
     @Repl(posns = {@Repl.Posn(i = 3), @Repl.Posn(i = 8, rv = "#")})
     String extra;
-    //@Repl(posns = {@Repl.Posn(i = 3), @Repl.Posn(i = 8, rv = "#?12$%34")})
-    @Mask(type = SensitiveTypeEnum.FIXED_PHONE)
+    @Repl(posns = {@Repl.Posn(i = 3), @Repl.Posn(i = 8, rv = "#?12$%34")})
+    //@Mask(type = SensitiveTypeEnum.FIXED_PHONE)
     String tel;
     @Mask(type = SensitiveTypeEnum.MOBILE_PHONE/*, custom = Mask.CommonMaskOptions.PRE_3_SUF_3*/)
     String phone;
@@ -60,7 +60,7 @@ public class User extends BasicUser {
         //@Regex(pattern = "(\\w{3})\\w+(@qq.com)", rv = "$1***$2")
         @Mask(type = SensitiveTypeEnum.EMAIL)
         String email;
-        @Hash(algorithm = Hash.AlgorithmEnum.MD5, salt = "ws@4q#")
+        @Hash(algorithm = Hash.AlgorithmEnum.SM3, salt = "ws@4q#")
         String card;
     }
 }

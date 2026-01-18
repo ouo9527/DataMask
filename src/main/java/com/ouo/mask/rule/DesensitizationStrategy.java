@@ -1,8 +1,6 @@
 package com.ouo.mask.rule;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.util.ArrayUtil;
-import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,14 +20,6 @@ public class DesensitizationStrategy {
     private String effectDate;
     //到期日
     private String expiryDate;
-
-    public void setPackages(String packages) {
-        this.packages = StrUtil.splitToArray(packages, ",");
-    }
-
-    public void setPackages(String[] packages) {
-        this.packages = ArrayUtil.edit(packages, str -> StrUtil.trimToEmpty(str));
-    }
 
     public Date getEffectDate() {
         return DateUtil.parse(effectDate);
