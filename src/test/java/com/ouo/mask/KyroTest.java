@@ -18,6 +18,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+/***********************************************************
+ * Kryo高性能序列化/反序列化/拷贝单元测试
+ *
+ * Author:   ouo
+ * Date:     2026/4/5
+ ***********************************************************/
 public class KyroTest {
 
     /**

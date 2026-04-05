@@ -59,8 +59,8 @@
         <!-- 依赖 -->
         <spring.version>5.3.34</spring.version>
         <spring-boot.version>2.7.18</spring-boot.version>
-        <!-- json<->bean -->
-        <!--<fastjson2.version>2.0.8</fastjson2.version>-->
+        <!-- jackson<->bean -->
+        <fastjson2.version>2.0.8</fastjson2.version>
         <!-- xml<->bean -->
         <!--<dom4j.version>2.1.4</dom4j.version>-->
         <!-- XPath -->
@@ -73,7 +73,10 @@
         <!-- 高性能深拷贝：Kryo、FST(2.x-JDK1.7及以上、3.x-JDK14及以上) -->
         <!--<fst.version>2.57</fst.version>-->
         <kryo.version>5.6.2</kryo.version>
-
+        <!-- 高性能对象序例化/反序列化 -->
+        <orika.version>1.5.4</orika.version>
+        <!-- 高性能XML处理 -->
+        <vtd.version>2.13.4</vtd.version>
         <!-- jmh：单元级性能压测 -->
         <jmh.version>1.37</jmh.version>
     </properties>
@@ -135,11 +138,13 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
             <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
             <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <!--
             spring-boot-configuration-processor其实是一个注解处理器，在编译阶段干活的，一般在maven的声明都是 ,optional 为true;
@@ -153,7 +158,7 @@
         <!-- propertiestojson: 解决properties文件转Map时，将key中属性引用变成对象（不建议使用，依赖Gson） -->
         <!--<dependency>
             <groupId>pl.jalokim.propertiestojson</groupId>
-            <artifactId>java-rule-to-json</artifactId>
+            <artifactId>java-rule-to-jackson</artifactId>
             <version>${propertiestojson.version}</version>
             <optional>true</optional>
         </dependency>-->
@@ -168,12 +173,6 @@
             <artifactId>jackson-dataformat-rule</artifactId>
             <optional>true</optional>
         </dependency>-->
-        <!-- json: fastjson -->
-        <!--<dependency>
-            <groupId>com.alibaba.fastjson2</groupId>
-            <artifactId>fastjson2</artifactId>
-            <version>${fastjson2.version}</version>
-        </dependency>-->
         <!-- xml<->bean：依赖StAX 实现（如 Woodstox）-->
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -182,18 +181,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-afterburner</artifactId>
-        </dependency>
-        <!-- 高性能深拷贝：Kryo、FST -->
-        <!--<dependency>
-            <groupId>de.ruedigermoeller</groupId>
-            <artifactId>fst</artifactId>
-            <version>${fst.version}</version>
-        </dependency>-->
-        <!-- Kryo：依赖objenesis -->
-        <dependency>
-            <groupId>com.esotericsoftware</groupId>
-            <artifactId>kryo</artifactId>
-            <version>${kryo.version}</version>
         </dependency>
         <!-- hutool -->
         <dependency>
@@ -229,6 +216,43 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+
+        <!-- 依赖用于测试开始 -->
+        <!-- jackson: fastjson -->
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>${fastjson2.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- 高性能深拷贝(二进制序列化/反序列化)：Kryo、FST(最快) -->
+        <!--<dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>fst</artifactId>
+            <version>${fst.version}</version>
+             <scope>test</scope>
+        </dependency>-->
+        <!-- Kryo：依赖objenesis -->
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>${kryo.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- 高性能对象映射：orika（基于Javassist字节码操作） -->
+        <dependency>
+            <groupId>ma.glasnost.orika</groupId>
+            <artifactId>orika-core</artifactId>
+            <version>${orika.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- 高性能XML处理 -->
+        <dependency>
+            <groupId>com.ximpleware</groupId>
+            <artifactId>vtd-xml</artifactId>
+            <version>${vtd.version}</version>
+            <scope>test</scope>
         </dependency>
         <!-- 单元测试 -->
         <dependency>
@@ -270,6 +294,7 @@
             <version>${jmh.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- 依赖用于测试结束 -->
     </dependencies>
 
     <build>

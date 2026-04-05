@@ -13,7 +13,8 @@ import java.util.List;
 
 /***********************************************************
  * 多个模板表达式处理
- * Author:   刘春
+ *
+ * Author:   ouo
  * Date:     2025/12/7
  ***********************************************************/
 class CompositeStringExpressionWrap extends CompositeStringExpression {

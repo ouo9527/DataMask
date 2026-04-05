@@ -18,7 +18,8 @@ import java.util.Map;
  * 1）对于root object 根上下对象（推荐Java Bean），可以使用#root.属性或直接使用属性，
  *    例如：Bean对象：#root.name或name；Map对象：#root[name]或[name]或[0]
  * 2）对于evaluation context 上下文属性，需要使用#引用，例如：#name
- * Author:   刘春
+ *
+ * Author:   ouo
  * Date:     2024/11/28
  ***********************************************************/
 public interface ExpressionResolver {

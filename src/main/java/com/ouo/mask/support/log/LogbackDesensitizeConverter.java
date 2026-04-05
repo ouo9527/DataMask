@@ -20,7 +20,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
  *  Encoder：将日志事件转换为字节数组，同时将字节数组写入到一个 OutputStream
  *  Layouts：负责将日志事件转化为格式化的字符串
  *
- * Author:   刘春
+ * Author:   ouo
  * Date:     2022/11/18
  ***********************************************************/
 public class LogbackDesensitizeConverter extends MessageConverter implements LogDesensitizationParser {

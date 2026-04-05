@@ -2,8 +2,8 @@ package com.ouo.mask;
 
 import cn.hutool.core.text.StrBuilder;
 import com.ouo.mask.config.DesensitizationAutoConfiguration;
-import com.ouo.mask.enums.SceneEnum;
-import com.ouo.mask.handler.DesensitizationHandler;
+import com.ouo.mask.core.enums.SceneEnum;
+import com.ouo.mask.core.Desensitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.annotations.*;
@@ -36,7 +36,7 @@ public class PerformanceBenchmark {
     public static class JMHSample {
 
         @Autowired
-        private DesensitizationHandler handler;
+        private Desensitizer desensitizer;
 
         @Setup(Level.Trial) // 每个测试阶段初始化一次
         public void setup() {
@@ -66,10 +66,10 @@ public class PerformanceBenchmark {
             attach.setCard("532128199510286631");
             user.setAttach(attach);
 
-            log.info("根据注解&配置进行脱敏：{}", handler.desensitized(SceneEnum.ALL, user));
+            log.info("根据注解&配置进行脱敏：{}", desensitizer.desensitized(SceneEnum.ALL, user));
 
             String xml = "<Student> <Name> 李四 </Name> <Phones> <Phone> 13333333311 </Phone> <Phone> &lt;13333333312> </Phone></Phones> <text><![CDATA[<name>张曼玉</name>]]></text> </Student>";
-            log.info("XML字符串脱敏后数据：{}", handler.desensitized(SceneEnum.ALL, "", xml));
+            log.info("XML字符串脱敏后数据：{}", desensitizer.desensitized(SceneEnum.ALL, "", xml));
 
             //blackhole.consume(false); // 避免 JIT 优化忽略结果
         }

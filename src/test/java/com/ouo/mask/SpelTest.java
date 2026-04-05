@@ -18,9 +18,12 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * SpEL表达式解析测试
- */
+/***********************************************************
+ * SpEL表达式单元测试
+ *
+ * Author:   ouo
+ * Date:     2026/4/5
+ ***********************************************************/
 @Slf4j
 public class SpelTest {
 

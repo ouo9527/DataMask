@@ -6,7 +6,8 @@ import cn.hutool.core.util.ReUtil;
 
 /***********************************************************
  * 字符串工具
- * Author:   刘春
+ *
+ * Author:   ouo
  * Date:     2024/4/15
  ***********************************************************/
 public class StrUtil extends cn.hutool.core.util.StrUtil {
@@ -29,7 +30,17 @@ public class StrUtil extends cn.hutool.core.util.StrUtil {
     }
 
     /**
-     * 是否为JSONArray类型的字符串，首尾都为中括号判定为JSONArray字符串
+     * 判断字符串是否是JSON字符串（包含JSONObject或JSONArray类型）
+     *
+     * @param str 字符串
+     * @return 是否为JSONObject或JSONArray类型的字符串
+     */
+    public static boolean isTypeJson(CharSequence str) {
+        return isTypeJSONObject(str) || isTypeJSONArray(str);
+    }
+
+    /**
+     * 判断是否为JSONArray类型的字符串，首尾都为中括号判定为JSONArray字符串
      *
      * @param str 字符串
      * @return 是否为JSONArray类型字符串
@@ -43,7 +54,7 @@ public class StrUtil extends cn.hutool.core.util.StrUtil {
 
 
     /**
-     * 是否为JSONObject类型字符串，首尾都为大括号判定为JSONObject字符串
+     * 判断是否为JSONObject类型字符串，首尾都为大括号判定为JSONObject字符串
      *
      * @param str 字符串
      * @return 是否为JSON字符串
@@ -68,19 +79,6 @@ public class StrUtil extends cn.hutool.core.util.StrUtil {
      */
     public static String toCamelCase2(CharSequence name) {
         return lowerFirst(toCamelCase(toCamelCase(name), CharUtil.DASHED));
-    }
-
-    /**
-     * 简单判断是否是xml字符串
-     *
-     * @param str xml字符串
-     * @return
-     */
-    public static boolean isTypeXml(CharSequence str) {
-        if (StrUtil.isBlank(str)) {
-            return false;
-        }
-        return ReUtil.isMatch("^(\\s*<\\?xml.*\\?>)?\\s*<\\w+>.*</\\w+>$", str);
     }
 
 

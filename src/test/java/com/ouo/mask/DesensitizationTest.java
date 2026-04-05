@@ -6,8 +6,8 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.text.StrBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.ouo.mask.enums.SceneEnum;
-import com.ouo.mask.handler.DesensitizationHandler;
+import com.ouo.mask.core.Desensitizer;
+import com.ouo.mask.core.enums.SceneEnum;
 import com.ouo.mask.util.StrUtil;
 import com.ouo.mask.vo.User;
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +26,17 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/***********************************************************
+ * 脱敏单元测试
+ *
+ * Author:   ouo
+ * Date:     2026/4/5
+ ***********************************************************/
 @Slf4j
 public class DesensitizationTest extends AbstractUnitTest {
 
     @Autowired
-    private DesensitizationHandler handler;
+    private Desensitizer desensitizer;
 
     /**
      * 转驼峰命名测试
@@ -85,7 +91,7 @@ public class DesensitizationTest extends AbstractUnitTest {
         results.add("hello");
         results.add(user);
 
-        log.info("脱敏迭代器：{}", results.iterator());
+        log.info("脱敏迭代器：{}", results); // Fastjson不支持直接将iterator序列化，此时会直接输出{}
     }
 
     /**
@@ -104,7 +110,7 @@ public class DesensitizationTest extends AbstractUnitTest {
         //builder.newDocument(); // 全新空白文档
         Document doc = builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 
-        log.info("脱敏Dom对象：{}", doc);
+        log.info("脱敏Dom对象：{}", doc); // desensitizer.desensitized(SceneEnum.LOG, doc)
     }
 
     /**
@@ -144,9 +150,10 @@ public class DesensitizationTest extends AbstractUnitTest {
         u.setExtra("[\"北京市朝阳区发和小区1号楼2单元303室\"]");
         u.setMobile("17722657194");
         u.setIdCard(new StrBuilder("6879796065447"));
+        u.setMap(data);
         data.put("user", u);
 
-        System.out.printf("根据配置进行脱敏：%s\n", handler.desensitized(this.getClass().getName(), SceneEnum.ALL, data));
+        System.out.printf("根据配置进行脱敏：%s\n", desensitizer.desensitized(null, data));
 
         User user = new User("");
         user.setName("张王四");
@@ -169,7 +176,7 @@ public class DesensitizationTest extends AbstractUnitTest {
         attach.setCard("532128199510286631");
         user.setAttach(attach);
 
-        System.out.printf("根据注解&配置进行脱敏：%s\n", handler.desensitized(this.getClass().getName(), SceneEnum.ALL, user));
+        System.out.printf("根据注解&配置进行脱敏：%s\n", desensitizer.desensitized(SceneEnum.ALL, user));
 
     }
 

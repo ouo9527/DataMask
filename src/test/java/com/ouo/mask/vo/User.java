@@ -1,19 +1,30 @@
 package com.ouo.mask.vo;
 
 import cn.hutool.core.text.StrBuilder;
-import com.ouo.mask.annotation.*;
-import com.ouo.mask.enums.SensitiveTypeEnum;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.ouo.mask.core.annotation.*;
+import com.ouo.mask.core.enums.SensitiveTypeEnum;
+import com.ouo.mask.jackson.CharSequenceSerializer;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 
 @Setter
 @Getter
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "uid" // 指定标识字段
+)
 public class User extends BasicUser {
 
     private static final String ip = "192.168.55.13";
     private final String FNAME = "常量可序列化";
+    @JsonSerialize(using = CharSequenceSerializer.class)
     public StrBuilder idCard;
     @Mask(type = SensitiveTypeEnum.ADDRESS)
     String[] addr;
@@ -44,11 +55,19 @@ public class User extends BasicUser {
     private transient String tname = "transient变量不可序列化";
     private int[] ages;
 
+    @JsonIdentityReference(alwaysAsId = true)
+    private Map map;
+    private User user; // 自引用
+
     public User() {
 
     }
 
     public User(String str) {
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Setter

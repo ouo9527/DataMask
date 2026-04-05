@@ -3,18 +3,18 @@ package com.ouo.mask.support.log;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
-import com.ouo.mask.enums.SceneEnum;
-import com.ouo.mask.handler.DesensitizationHandler;
+import com.ouo.mask.core.Desensitizer;
+import com.ouo.mask.core.enums.SceneEnum;
+import com.ouo.mask.semi.SemiStructMapper;
 import com.ouo.mask.spel.BraceSpelExpressionResolver;
 import com.ouo.mask.spel.ExpressionResolver;
-import com.ouo.mask.util.JacksonUtil;
 import com.ouo.mask.util.SpringUtil;
 import org.slf4j.helpers.MessageFormatter;
 
 /***********************************************************
  * 日志脱敏解析器
  *
- * Author:   刘春
+ * Author:   ouo
  * Date:     2024/4/26
  ***********************************************************/
 public interface LogDesensitizationParser {
@@ -36,9 +36,9 @@ public interface LogDesensitizationParser {
         if (StrUtil.isBlank(template) || ArrayUtil.isEmpty(args)) {
             return template;
         }
-        DesensitizationHandler desensitizedhandler = SpringUtil.getBean(DesensitizationHandler.class, true);
+        Desensitizer desensitizer = SpringUtil.getBean(Desensitizer.class, true);
         // 对原数据进行脱敏
-        final Object[] results = null == desensitizedhandler ? args : desensitizedhandler.desensitized(loggerName, SceneEnum.LOG, args);
+        final Object[] results = null == desensitizer ? args : desensitizer.desensitized(SceneEnum.LOG, args);
         ExpressionResolver expressionResolver = SpringUtil.getBean(BraceSpelExpressionResolver.class, true);
         if (null != expressionResolver) {
             return expressionResolver.exe(template, 1 == results.length ? results[0] : results, String.class, (expression, result, e) -> {
@@ -50,7 +50,8 @@ public interface LogDesensitizationParser {
                 for (int i = 0; i < results.length; i++) {
                     if (results[i] instanceof CharSequence) {
                         try {
-                            val = BeanUtil.getProperty(JacksonUtil.toBean((String) results[i], Object.class), expression.getExpressionString());
+                            val = BeanUtil.getProperty(SpringUtil.getBean(SemiStructMapper.class).toBean((String) results[i], Object.class)
+                                    , expression.getExpressionString());
                         } catch (Exception ex) {
                             // 非json或xml字符串
                         }
@@ -62,7 +63,7 @@ public interface LogDesensitizationParser {
                 if (null == val && index < results.length) {
                     String fieldName = StrUtil.subAfter(expression.getExpressionString(), ".", true);
                     fieldName = StrUtil.subBetween(StrUtil.blankToDefault(fieldName, expression.getExpressionString()), "[", "]");
-                    val = desensitizedhandler.desensitized(loggerName, SceneEnum.LOG, StrUtil.trim(StrUtil.blankToDefault(fieldName,
+                    val = desensitizer.desensitized(SceneEnum.LOG, StrUtil.trim(StrUtil.blankToDefault(fieldName,
                             expression.getExpressionString())), results[index]);
                 }
 

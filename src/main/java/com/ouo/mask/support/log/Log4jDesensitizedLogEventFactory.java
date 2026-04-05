@@ -21,7 +21,7 @@ import java.util.List;
  *  private static final Marker SENSITIVE_DATA_MARKER = MarkerFactory.getMarker("SENSITIVE_DATA_MARKER");
  *  logger.warn(SENSITIVE_DATA_MARKER, cardNo);
  *
- * Author:   刘春
+ * Author:   ouo
  * Date:     2022/12/3
  ***********************************************************/
 public class Log4jDesensitizedLogEventFactory implements LogEventFactory, LogDesensitizationParser {

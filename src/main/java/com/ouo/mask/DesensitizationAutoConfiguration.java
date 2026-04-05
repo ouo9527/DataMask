@@ -1,8 +1,11 @@
 package com.ouo.mask;
 
-import com.ouo.mask.config.DesensitizationProperties;
-import com.ouo.mask.handler.DefaultDesensitizationHandler;
-import com.ouo.mask.handler.DesensitizationHandler;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.ouo.mask.core.Desensitizer;
+import com.ouo.mask.core.rule.DesensitizationProperties;
+import com.ouo.mask.jackson.JacksonDesensitizer;
+import com.ouo.mask.jackson.JacksonObjectMapper;
 import com.ouo.mask.spel.BraceSpelExpressionResolver;
 import com.ouo.mask.spel.DollarSpelExpressionResolver;
 import com.ouo.mask.spel.PoundSpelExpressionResolver;
@@ -16,9 +19,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
+import java.util.Optional;
+
 /***********************************************************
  * 数据脱敏配置
- * Author:   刘春
+ *
+ * Author:   ouo
  * Date:     2023/1/17
  ***********************************************************/
 //@EnableAutoConfiguration // 若@EnableAutoConfiguration + spring.factories同时使用会造成 DesensitizationAutoConfiguration 循环依赖
@@ -45,8 +51,16 @@ public class DesensitizationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public DesensitizationHandler desensitizationHandler() {
-        return new DefaultDesensitizationHandler();
+    public JacksonObjectMapper semiStructMapper(Optional<JsonMapper> jsonMapperOptional
+            , Optional<XmlMapper> xmlMapperOptional) {
+        return new JacksonObjectMapper(jsonMapperOptional, xmlMapperOptional);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public Desensitizer desensitizationHandler(DesensitizationProperties properties
+            , JacksonObjectMapper objectMapper) {
+        return new JacksonDesensitizer(properties, objectMapper);
     }
 
     @Bean

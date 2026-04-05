@@ -7,15 +7,21 @@ import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.Digester;
 import cn.hutool.crypto.digest.MD5;
-import com.ouo.mask.annotation.*;
-import com.ouo.mask.enums.SceneEnum;
-import com.ouo.mask.rule.*;
+import com.ouo.mask.core.annotation.*;
+import com.ouo.mask.core.enums.SceneEnum;
+import com.ouo.mask.core.rule.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/***********************************************************
+ * 字段脱敏工具
+ *
+ * Author:   ouo
+ * Date:     2024/4/26
+ ***********************************************************/
 @Slf4j
 public abstract class DesensitizedUtil {
 

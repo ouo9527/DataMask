@@ -4,7 +4,7 @@ import cn.hutool.core.bean.BeanPath;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
-import com.ouo.mask.rule.DesensitizationStrategy;
+import com.ouo.mask.core.rule.DesensitizationProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -20,7 +20,8 @@ import java.util.Map;
 
 /***********************************************************
  * 针对于Spring（非Spring Boot）脱敏配置加载并解析
- * Author:   刘春
+ *
+ * Author:   ouo
  * Date:     2025/12/7
  ***********************************************************/
 @Slf4j
@@ -41,7 +42,6 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
                 dict.putAll(this.processProperties(((ConfigurableEnvironment) environment).getPropertySources()));
             }
             DesensitizationProperties desensitizationProperties = new DesensitizationProperties();
-            desensitizationProperties.setStrategy(dict.getByPath(DesensitizationProperties.STRATEGY, DesensitizationStrategy.class));
             Object rules = dict.getByPath(DesensitizationProperties.RULES);
             if (rules instanceof Map) desensitizationProperties.setRules((Map<String, ?>) rules);
             beanFactory.registerSingleton(StrUtil.toCamelCase(DesensitizationProperties.class.getSimpleName()), desensitizationProperties);
