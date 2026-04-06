@@ -2,14 +2,18 @@ package com.ouo.mask.support.log;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ArrayUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.ReflectUtil;
 import com.ouo.mask.core.Desensitizer;
 import com.ouo.mask.core.enums.SceneEnum;
 import com.ouo.mask.semi.SemiStructMapper;
 import com.ouo.mask.spel.BraceSpelExpressionResolver;
 import com.ouo.mask.spel.ExpressionResolver;
 import com.ouo.mask.util.SpringUtil;
+import com.ouo.mask.util.StrUtil;
 import org.slf4j.helpers.MessageFormatter;
+
+import java.lang.reflect.Field;
 
 /***********************************************************
  * 日志脱敏解析器
@@ -36,40 +40,69 @@ public interface LogDesensitizationParser {
         if (StrUtil.isBlank(template) || ArrayUtil.isEmpty(args)) {
             return template;
         }
-        Desensitizer desensitizer = SpringUtil.getBean(Desensitizer.class, true);
-        // 对原数据进行脱敏
-        final Object[] results = null == desensitizer ? args : desensitizer.desensitized(SceneEnum.LOG, args);
-        ExpressionResolver expressionResolver = SpringUtil.getBean(BraceSpelExpressionResolver.class, true);
-        if (null != expressionResolver) {
-            return expressionResolver.exe(template, 1 == results.length ? results[0] : results, String.class, (expression, result, e) -> {
+        final ExpressionResolver expressionResolver = SpringUtil.getBean(BraceSpelExpressionResolver.class, true);
+        final SemiStructMapper semiStructMapper = SpringUtil.getBean(SemiStructMapper.class, true);
+
+        if (ObjUtil.isAllNotEmpty(expressionResolver, semiStructMapper)) {
+            final Desensitizer desensitizer = SpringUtil.getBean(Desensitizer.class, true);
+            return expressionResolver.exe(template, 1 == args.length ? args[0] : args, String.class, (expression, result, e) -> {
+                // 空表达式
                 int index = expression.getPlaceholderIndex();
                 if (StrUtil.isBlank(expression.getExpressionString()))
-                    return index >= results.length ? "{}" : results[index];
-                if (null == e && null != result) return result; // Spring SpEl可以解析
-                Object val = null;
-                for (int i = 0; i < results.length; i++) {
-                    if (results[i] instanceof CharSequence) {
-                        try {
-                            val = BeanUtil.getProperty(SpringUtil.getBean(SemiStructMapper.class).toBean((String) results[i], Object.class)
-                                    , expression.getExpressionString());
-                        } catch (Exception ex) {
-                            // 非json或xml字符串
+                    return index >= args.length ? "{}" : null == desensitizer ? args[index]
+                            : desensitizer.desensitized(SceneEnum.LOG, args[index]);
+                Object propVal = null;  // 当前属性/字段的值
+                Object currentObj = null; // 当前属性/字段所取值的对象
+
+                // Spring SpEl可以正常解析
+                if (null == e && null != result) {
+                    propVal = result;
+                    // 若非单层引用，如#p0.，则此时所获取到当前属性/字段取值的对象会存在问题！！
+                    currentObj = ObjUtil.defaultIfNull(expression.getContext().lookupVariable(
+                            StrUtil.toObjName(expression.getExpressionString()))
+                            , expression.getContext().getRootObject().getValue());
+                } else {
+                    // Spring SpEl无法正常解析，则从半结构化数据中采用Hutool#BeanUtil进行获取
+                    for (int i = 0; i < args.length; i++) {
+                        if (args[i] instanceof CharSequence) {
+                            try {
+                                currentObj = semiStructMapper.toBean((String) args[i], Object.class);
+                                // 采用Hutool#BeanUtil获取表达式值
+                                propVal = BeanUtil.getProperty(currentObj, expression.getExpressionString());
+                            } catch (Exception ex) {
+                                // 非json或xml字符串
+                            }
                         }
+
+                        // 取到值
+                        if (null != propVal) break;
                     }
-                    // 取到值
-                    if (null != val) break;
-                }
-                // 轮询后还是取不到值，使用表达式索引位置取对应值，然后进行脱敏
-                if (null == val && index < results.length) {
-                    String fieldName = StrUtil.subAfter(expression.getExpressionString(), ".", true);
-                    fieldName = StrUtil.subBetween(StrUtil.blankToDefault(fieldName, expression.getExpressionString()), "[", "]");
-                    val = desensitizer.desensitized(SceneEnum.LOG, StrUtil.trim(StrUtil.blankToDefault(fieldName,
-                            expression.getExpressionString())), results[index]);
+
+                    // 都无法解析，则采取轮询按位置取值，若轮询后取不到值，则使用表达式索引位置取对应值，然后进行脱敏
+                    if (null == propVal && index < args.length) {
+                        // 采用Hutool#BeanUtil获取表达式值
+                        propVal = ObjUtil.defaultIfNull(BeanUtil.getProperty(args[index], expression.getExpressionString())
+                                , args[index]);
+                        currentObj = null;
+                    }
                 }
 
-                return val;
+                if (null == desensitizer) return propVal;
+
+                // 从表达式中获取属性/字段
+                String propName = StrUtil.toPropName(expression.getExpressionString());
+                Field field = null;
+                if (null != currentObj) {
+                    try {
+                        field = ReflectUtil.getField(currentObj.getClass(), propName);
+                    } catch (RuntimeException ignore) {
+                    }
+                }
+
+                return null == field ? desensitizer.desensitized(SceneEnum.LOG, propName, propVal)
+                        : desensitizer.desensitized(SceneEnum.LOG, field, propVal);
             });
         }
-        return MessageFormatter.arrayFormat(template, results).getMessage();
+        return MessageFormatter.arrayFormat(template, args).getMessage();
     }
 }

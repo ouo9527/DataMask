@@ -26,11 +26,7 @@ public class CharSequenceSerializerModifier extends BeanSerializerModifier {
     public List<BeanPropertyWriter> changeProperties(SerializationConfig config, BeanDescription beanDesc
             , List<BeanPropertyWriter> beanProperties) {
 
-        JacksonDesensitizer desensitizer = null;
-        try {
-            desensitizer = SpringUtil.getBean(JacksonDesensitizer.class);
-        } catch (RuntimeException ignore) {
-        }
+        JacksonDesensitizer desensitizer = SpringUtil.getBean(JacksonDesensitizer.class, true);
 
         if (null != desensitizer) {
             for (BeanPropertyWriter writer : beanProperties) {

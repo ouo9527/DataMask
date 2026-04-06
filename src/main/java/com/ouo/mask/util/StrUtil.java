@@ -1,8 +1,12 @@
 package com.ouo.mask.util;
 
+import cn.hutool.core.text.CharPool;
 import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.CharUtil;
 import cn.hutool.core.util.ReUtil;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /***********************************************************
  * 字符串工具
@@ -30,40 +34,87 @@ public class StrUtil extends cn.hutool.core.util.StrUtil {
     }
 
     /**
-     * 判断字符串是否是JSON字符串（包含JSONObject或JSONArray类型）
+     * 简单从SpEL表达式获取对象名称
+     *
+     * @param spelStr SpEL表达式
+     * @return 返回对象名称
+     */
+    public static String toObjName(String spelStr) {
+        if (!contains(spelStr, CharPool.DOT)) return null;
+
+        String objName = subBefore(spelStr, CharPool.DOT, false);
+
+        return blankToDefault(subAfter(objName, '#', true)
+                , blankToDefault(subAfter(objName, '$', true), objName));
+    }
+
+    /**
+     * 简单从SpEL表达式获取属性
+     *
+     * @param spelStr   SpEL表达式
+     * @return 返回属性
+     */
+    public static String toPropName(String spelStr) {
+        String propName = blankToDefault(subAfter(spelStr, CharPool.DOT, true), spelStr);
+
+        return blankToDefault(subBetween(propName, CharPool.BRACKET_START + "",
+                CharPool.BRACKET_END + ""), propName);
+    }
+
+    /**
+     * 简单判断字符串是否是XML字符串
      *
      * @param str 字符串
-     * @return 是否为JSONObject或JSONArray类型的字符串
+     * @return 是否为XML字符串
+     */
+    public static boolean isTypeXml(CharSequence str) {
+        if (isEmpty(str)) return false;
+        // 采用正则表达式
+        Pattern pattern = Pattern.compile("^\\s*<(\\?xml|([a-zA-Z_][\\w\\-\\.]*)(\\s+[^>]*)?>.*</\\2>|\\w+[^>]*/?>)"
+                , Pattern.DOTALL | Pattern.UNIX_LINES | Pattern.MULTILINE);
+        Matcher matcher = pattern.matcher(str);
+        if ((matcher.matches()) || (matcher.find() && 0 == matcher.start())) return true;
+
+        String trimStr = strip(strip(trim(str), CharUtil.CR + ""), CharUtil.LF + ""); //去空格、去换行符
+        return (startWith(trimStr, "<?xml") && endWith(trimStr, "?>")) ||
+                (startWith(trimStr, '<') && endWith(trimStr, '>'));
+    }
+
+    /**
+     * 简单判断字符串是否是JSON字符串（包含字典或列表类型）
+     *
+     * @param str 字符串
+     * @return 是否为字典或列表类型的字符串
      */
     public static boolean isTypeJson(CharSequence str) {
         return isTypeJSONObject(str) || isTypeJSONArray(str);
     }
 
     /**
-     * 判断是否为JSONArray类型的字符串，首尾都为中括号判定为JSONArray字符串
+     * 简单判断是否为列表类型的字符串，首尾都为中括号判定为列表类型JSON字符串
      *
      * @param str 字符串
-     * @return 是否为JSONArray类型字符串
+     * @return 是否为列表类型JSON字符串
      */
     public static boolean isTypeJSONArray(CharSequence str) {
         if (isBlank(str)) {
             return false;
         }
-        return StrUtil.isWrap(StrUtil.trim(str), '[', ']');
+        return isWrap(trim(str), '[', ']');
     }
 
 
     /**
-     * 判断是否为JSONObject类型字符串，首尾都为大括号判定为JSONObject字符串
+     * 简单判断是否为字典类型字符串，首尾都为大括号判定为字典类型JSON字符串
      *
      * @param str 字符串
-     * @return 是否为JSON字符串
+     * @return 是否为字典类型JSON字符串
      */
     public static boolean isTypeJSONObject(CharSequence str) {
-        if (StrUtil.isBlank(str)) {
+        if (isBlank(str)) {
             return false;
         }
-        return StrUtil.isWrap(StrUtil.trim(str), '{', '}');
+        return isWrap(trim(str), '{', '}');
     }
 
     /**

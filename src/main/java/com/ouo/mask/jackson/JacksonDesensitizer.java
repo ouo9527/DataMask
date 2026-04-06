@@ -41,11 +41,56 @@ public final class JacksonDesensitizer extends AbstractDesensitizer {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * key-data任意类型脱敏
+     *
+     * @param scene      脱敏场景
+     * @param fieldName  待脱敏字段
+     * @param data       待脱敏数据
+     * @param annotation 注解式脱敏规则
+     * @return 返回已脱敏数据
+     */
     @Override
-    public <T> T desensitized(SceneEnum scene, String fieldName, T data) {
-        // 简单值类型，包含原始类型、Number、Date、URI、URL、Locale、Class
+    public <T> T desensitized(SceneEnum scene, String fieldName, T data, Annotation annotation) {
+        // 字符类型进行脱敏
+        if (data instanceof CharSequence) {
+            if (data instanceof String) {
+                // 判断是否是JSON或XML字符串
+                if (StrUtil.isTypeJson((String) data) || StrUtil.isTypeXml((String) data)) {
+                    try {
+                        return (T) this.transform(scene, fieldName, (String) data, annotation);
+                    } catch (Exception e) {
+                        // 半结构化(如：JSON/XML)处理异常
+                        log.warn("【{}】字段半结构化(如：JSON/XML)处理异常：{}", fieldName, e.getMessage());
+                    }
+                }
+
+                if (data instanceof String) {
+                    return (T) this.desensitized(scene, fieldName, (String) data, annotation);
+                }
+            } else {
+                // CharSequence的具体类型是否具备String类型参数的构造方法，若具备则可重新创建原对象
+                Constructor<?> constructor = ObjUtil.defaultIfNull(ReflectUtil.getConstructor(data.getClass(), String.class)
+                        , ReflectUtil.getConstructor(data.getClass(), String[].class));
+                if (null != constructor) {
+                    try {
+                        constructor.setAccessible(true);
+                        CharSequence val = this.desensitized(scene, fieldName, (CharSequence) Convert.convert(String.class, data), annotation);
+
+                        return (T) constructor.newInstance(ArrayUtil.firstNonNull(constructor.getParameterTypes()).isArray() ? new CharSequence[]{val} : val);
+                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                        // String转换异常
+                        log.warn("【{}】字段String转【{}】异常：{}", fieldName, constructor.getName(), e.getMessage());
+                    }
+                }
+
+                return data;
+            }
+        }
+
+        // 简单值类型(除字符类型即String、other CharSequenc外)不脱敏，包含原始类型、Number、Date、URI、URL、Locale、Class
         if (null == data || ClassUtil.isSimpleValueType(data.getClass())) {
-            return super.desensitized(scene, fieldName, data);
+            return data;
         }
 
         // 其他类型
@@ -65,56 +110,9 @@ public final class JacksonDesensitizer extends AbstractDesensitizer {
             return (T) this.objectMapper.toBean(this.objectMapper.toString(data, SemiStructType.JSON
                     , prop), data.getClass());
         } catch (Throwable e) {
-            //log.warn("【{}】类脱敏异常：{}", ClassUtil.getClassName(data, false), e.getMessage());
+            log.warn("【{}】类脱敏异常：{}", ClassUtil.getClassName(data, false), e.getMessage());
             return data;
         }
-    }
-
-    /**
-     * key-data任意类型脱敏
-     *
-     * @param scene      脱敏场景
-     * @param fieldName  待脱敏字段
-     * @param data       待脱敏数据
-     * @param annotation 注解式脱敏规则
-     * @return 返回已脱敏数据
-     */
-    @Override
-    public <T> T desensitized(SceneEnum scene, String fieldName, T data, Annotation annotation) {
-        // 字符类型进行脱敏
-        if (data instanceof CharSequence) {
-            if (data instanceof String) {
-                try {
-                    return (T) this.transform(scene, fieldName, (String) data, annotation);
-                } catch (Exception e) {
-                    // 半结构化(如：JSON/XML)处理异常
-                    //log.warn("【{}】字段半结构化(如：JSON/XML)处理异常：{}", fieldName, e.getMessage());
-                }
-
-                if (data instanceof String) {
-                    return (T) this.desensitized(scene, fieldName, (String) data, annotation);
-                }
-            } else {
-                // CharSequence的具体类型是否具备String类型参数的构造方法，若具备则可重新创建原对象
-                Constructor<?> constructor = ObjUtil.defaultIfNull(ReflectUtil.getConstructor(data.getClass(), String.class)
-                        , ReflectUtil.getConstructor(data.getClass(), String[].class));
-                if (null != constructor) {
-                    try {
-                        constructor.setAccessible(true);
-                        CharSequence val = this.desensitized(scene, fieldName, (CharSequence) Convert.convert(String.class, data), annotation);
-
-                        return (T) constructor.newInstance(ArrayUtil.firstNonNull(constructor.getParameterTypes()).isArray() ? new CharSequence[]{val} : val);
-                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                        // String转换异常
-                        //log.warn("【{}】字段String转【{}】异常：{}", fieldName, constructor.getName(), e.getMessage());
-                    }
-                }
-
-                return data;
-            }
-        }
-
-        return this.desensitized(scene, fieldName, data);
     }
 
     /**
@@ -184,11 +182,8 @@ public final class JacksonDesensitizer extends AbstractDesensitizer {
      * @return 返回转换后JSON字符串
      */
     private String transformJson(String json, Properties prop, boolean isPretty) {
-        String val = (isPretty ? this.objectMapper.toPrettyString(json, SemiStructType.JSON, prop)
+        return (isPretty ? this.objectMapper.toPrettyString(json, SemiStructType.JSON, prop)
                 : this.objectMapper.toString(json, SemiStructType.JSON, prop));
-
-        return isPretty ? StrUtil.removeSuffix(StrUtil.startWith(val, System.lineSeparator())
-                ? val : System.lineSeparator() + val, System.lineSeparator()) : val;
     }
 
     /**
@@ -224,8 +219,7 @@ public final class JacksonDesensitizer extends AbstractDesensitizer {
                         StrUtil.DEFAULT_END_ROOT_NODE);
             }
 
-            return isPretty ? StrUtil.removeSuffix(StrUtil.startWith(val, System.lineSeparator())
-                    ? val : System.lineSeparator() + val, System.lineSeparator()) : val;
+            return val;
         }
     }
 

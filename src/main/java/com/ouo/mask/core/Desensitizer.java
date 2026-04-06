@@ -1,6 +1,5 @@
 package com.ouo.mask.core;
 
-import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.ModifierUtil;
 import com.ouo.mask.core.annotation.*;
 import com.ouo.mask.core.enums.SceneEnum;
@@ -37,18 +36,7 @@ public interface Desensitizer {
      * @return 返回已脱敏数据
      */
     default <T> T desensitized(SceneEnum scene, String fieldName, T data) {
-        // 字符类型即String、other CharSequenc
-        if (data instanceof CharSequence) {
-            return this.desensitized(scene, fieldName, data, null);
-        }
-
-        // 简单值类型(除字符类型即String、other CharSequenc外)不脱敏，包含原始类型、Number、Date、URI、URL、Locale、Class
-        if (null == data || ClassUtil.isSimpleValueType(data.getClass())) {
-            return data;
-        }
-
-        // 其他类型需要自行实现
-        return data;
+        return this.desensitized(scene, fieldName, data, null);
     }
 
     /**
@@ -64,15 +52,10 @@ public interface Desensitizer {
         if (null == field || ModifierUtil.isStatic(field)
                 || ModifierUtil.hasModifier(field, ModifierUtil.ModifierType.FINAL)) return data;
 
-        try {
-            return this.desensitized(scene, field.getName(), data, Arrays.stream(field.getAnnotations())
-                    .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
-                            || a instanceof Repl || a instanceof Mask)
-                    .findAny().orElse(null));
-        } catch (Throwable e) {
-            //log.warn("【{}】字段脱敏异常：{}", field.getName(), e.getMessage());
-        }
-        return data;
+        return this.desensitized(scene, field.getName(), data, Arrays.stream(field.getAnnotations())
+                .filter(a -> a instanceof Empty || a instanceof Hash || a instanceof Regex
+                        || a instanceof Repl || a instanceof Mask)
+                .findAny().orElse(null));
     }
 
 
@@ -84,6 +67,6 @@ public interface Desensitizer {
      * @return 返回已脱敏Java Bean或Map数据
      */
     default <T> T desensitized(SceneEnum scene, T data) {
-        return this.desensitized(scene, "", data);
+        return this.desensitized(scene, null, data, null);
     }
 }
