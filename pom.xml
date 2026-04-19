@@ -182,6 +182,12 @@
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-afterburner</artifactId>
         </dependency>
+        <!-- Kryo：依赖objenesis -->
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>${kryo.version}</version>
+        </dependency>
         <!-- hutool -->
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -233,13 +239,6 @@
             <version>${fst.version}</version>
              <scope>test</scope>
         </dependency>-->
-        <!-- Kryo：依赖objenesis -->
-        <dependency>
-            <groupId>com.esotericsoftware</groupId>
-            <artifactId>kryo</artifactId>
-            <version>${kryo.version}</version>
-            <scope>test</scope>
-        </dependency>
         <!-- 高性能对象映射：orika（基于Javassist字节码操作） -->
         <dependency>
             <groupId>ma.glasnost.orika</groupId>

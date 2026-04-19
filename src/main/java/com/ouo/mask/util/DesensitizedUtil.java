@@ -404,11 +404,11 @@ public abstract class DesensitizedUtil {
             String rv = posn.getRv();
             if (StrUtil.isNotEmpty(rv)) {//若替换值为空保持原值
                 if (span >= rv.length()) //替换值长度小于所要填充位置时，需填充
-                    return StrUtil.replace(val, index, i, StrUtil.repeatByLength(rv, span));
-                else return StrUtil.replace(val, index, i, StrUtil.subPre(rv, span));
+                    return StrUtil.replaceByCodePoint(val, index, i, StrUtil.repeatByLength(rv, span));
+                else return StrUtil.replaceByCodePoint(val, index, i, StrUtil.subPre(rv, span));
             }
         } else {//随机值
-            return StrUtil.replace(val, index, i, RandomUtil.randomString(span));
+            return StrUtil.replaceByCodePoint(val, index, i, RandomUtil.randomString(span));
         }
         return val;
     }

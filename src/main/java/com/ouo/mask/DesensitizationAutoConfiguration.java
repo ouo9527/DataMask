@@ -2,9 +2,9 @@ package com.ouo.mask;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.ouo.mask.core.DefaultDesensitizer;
 import com.ouo.mask.core.Desensitizer;
 import com.ouo.mask.core.rule.DesensitizationProperties;
-import com.ouo.mask.jackson.JacksonDesensitizer;
 import com.ouo.mask.jackson.JacksonObjectMapper;
 import com.ouo.mask.spel.BraceSpelExpressionResolver;
 import com.ouo.mask.spel.DollarSpelExpressionResolver;
@@ -60,7 +60,7 @@ public class DesensitizationAutoConfiguration {
     @ConditionalOnMissingBean
     public Desensitizer desensitizationHandler(DesensitizationProperties properties
             , JacksonObjectMapper objectMapper) {
-        return new JacksonDesensitizer(properties, objectMapper);
+        return new DefaultDesensitizer(properties, objectMapper);
     }
 
     @Bean

@@ -1,12 +1,13 @@
 package com.ouo.mask.support.log;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ReflectUtil;
 import com.ouo.mask.core.Desensitizer;
 import com.ouo.mask.core.enums.SceneEnum;
-import com.ouo.mask.semi.SemiStructMapper;
+import com.ouo.mask.semi.StringMapper;
 import com.ouo.mask.spel.BraceSpelExpressionResolver;
 import com.ouo.mask.spel.ExpressionResolver;
 import com.ouo.mask.util.SpringUtil;
@@ -14,6 +15,7 @@ import com.ouo.mask.util.StrUtil;
 import org.slf4j.helpers.MessageFormatter;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 
 /***********************************************************
  * 日志脱敏解析器
@@ -41,9 +43,9 @@ public interface LogDesensitizationParser {
             return template;
         }
         final ExpressionResolver expressionResolver = SpringUtil.getBean(BraceSpelExpressionResolver.class, true);
-        final SemiStructMapper semiStructMapper = SpringUtil.getBean(SemiStructMapper.class, true);
+        final StringMapper stringMapper = SpringUtil.getBean(StringMapper.class, true);
 
-        if (ObjUtil.isAllNotEmpty(expressionResolver, semiStructMapper)) {
+        if (ObjUtil.isAllNotEmpty(expressionResolver, stringMapper)) {
             final Desensitizer desensitizer = SpringUtil.getBean(Desensitizer.class, true);
             return expressionResolver.exe(template, 1 == args.length ? args[0] : args, String.class, (expression, result, e) -> {
                 // 空表达式
@@ -64,30 +66,43 @@ public interface LogDesensitizationParser {
                 } else {
                     // Spring SpEl无法正常解析，则从半结构化数据中采用Hutool#BeanUtil进行获取
                     for (int i = 0; i < args.length; i++) {
-                        if (args[i] instanceof CharSequence) {
-                            try {
-                                currentObj = semiStructMapper.toBean((String) args[i], Object.class);
-                                // 采用Hutool#BeanUtil获取表达式值
-                                propVal = BeanUtil.getProperty(currentObj, expression.getExpressionString());
-                            } catch (Exception ex) {
-                                // 非json或xml字符串
-                            }
+                        try {
+                            currentObj = (args[i] instanceof String) ? stringMapper.toBean((String) args[i],
+                                    Object.class) : args[i];
+                            // 采用Hutool#BeanUtil获取表达式值
+                            propVal = BeanUtil.getProperty(currentObj, expression.getExpressionString());
+                        } catch (Exception ex) {
+                            // 非json或xml字符串
                         }
 
                         // 取到值
-                        if (null != propVal) break;
+                        if (ArrayUtil.isArray(propVal)) {
+                            if (!ArrayUtil.isAllNull((Object[]) propVal)) break;
+                        } else if (propVal instanceof Collection) {
+                            if (!CollUtil.allMatch((Collection) propVal, v -> null == v)) break;
+                        } else if (!ObjUtil.isAllEmpty(propVal)) break;
                     }
 
                     // 都无法解析，则采取轮询按位置取值，若轮询后取不到值，则使用表达式索引位置取对应值，然后进行脱敏
                     if (null == propVal && index < args.length) {
-                        // 采用Hutool#BeanUtil获取表达式值
-                        propVal = ObjUtil.defaultIfNull(BeanUtil.getProperty(args[index], expression.getExpressionString())
-                                , args[index]);
-                        currentObj = null;
+                        try {
+                            currentObj = (args[index] instanceof String) ? stringMapper.toBean((String) args[index],
+                                    Object.class) : args[index];
+                            // 采用Hutool#BeanUtil获取表达式值
+                            propVal = BeanUtil.getProperty(currentObj, expression.getExpressionString());
+                            if (ArrayUtil.isArray(propVal)) {
+                                if (ArrayUtil.isAllNull((Object[]) propVal)) propVal = args[index];
+                            } else if (propVal instanceof Collection) {
+                                if (CollUtil.allMatch((Collection) propVal, v -> null == v)) propVal = args[index];
+                            } else if (null == propVal) propVal = args[index];
+                        } catch (Exception ex) {
+                            // 非json或xml字符串
+                            propVal = args[index];
+                        }
                     }
                 }
 
-                if (null == desensitizer) return propVal;
+                if (null == desensitizer || ObjUtil.isEmpty(propVal)) return propVal;
 
                 // 从表达式中获取属性/字段
                 String propName = StrUtil.toPropName(expression.getExpressionString());

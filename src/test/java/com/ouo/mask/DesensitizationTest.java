@@ -6,18 +6,20 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.text.StrBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.ouo.mask.core.Desensitizer;
 import com.ouo.mask.core.enums.SceneEnum;
+import com.ouo.mask.semi.StringMapper;
 import com.ouo.mask.util.StrUtil;
 import com.ouo.mask.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.slf4j.helpers.MessageFormatter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.annotation.Resource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -35,8 +37,10 @@ import java.util.*;
 @Slf4j
 public class DesensitizationTest extends AbstractUnitTest {
 
-    @Autowired
+    @Resource
     private Desensitizer desensitizer;
+    @Resource
+    private StringMapper stringMapper;
 
     /**
      * 转驼峰命名测试
@@ -120,7 +124,8 @@ public class DesensitizationTest extends AbstractUnitTest {
     public void desensitizedStr() {
         //DocumentBuilderFactory.newInstance().newDocumentBuilder().parse()
         String str = "<text><![CDATA[<name>张二狗蛋儿</name>]]></text><phone>17722657194</phone>";
-        log.info("脱敏XML片段字符串：{[text][name]}", str);
+        // {text}或{[text]}
+        log.info("脱敏XML片段字符串：{text}", str); // {[text][name]}无法引用到被转移或<![CDATA[]]>内部值
         str = "<student> <text><![CDATA[<name>张三丰</name>]]></text> <phones><phone>17722657194</phone><phone>18822657194</phone></phones><class><val>&lt;name>数学&lt;/name></val></class></student>";
         log.info("脱敏XML字符串：{}", str);
 
@@ -139,7 +144,7 @@ public class DesensitizationTest extends AbstractUnitTest {
      * @throws JsonProcessingException
      */
     @Test
-    public void desensitized() throws JsonProcessingException {
+    public void desensitized() {
 
         Map<String, Object> data = new HashMap<>();
         data.put("PhonE", "17722657194");
@@ -151,9 +156,12 @@ public class DesensitizationTest extends AbstractUnitTest {
         u.setMobile("17722657194");
         u.setIdCard(new StrBuilder("6879796065447"));
         u.setMap(data);
+        u.setUser(u);
         data.put("user", u);
 
-        System.out.printf("根据配置进行脱敏：%s\n", desensitizer.desensitized(null, data));
+        //System.out.printf("根据配置进行脱敏：%s\n", desensitizer.desensitized(null, new CharSequence[] {"hello", new StrBuilder("李")}));
+
+        System.out.printf("根据配置进行脱敏：%s\n", desensitizer.desensitized(null, u));
 
         User user = new User("");
         user.setName("张王四");
@@ -220,6 +228,8 @@ public class DesensitizationTest extends AbstractUnitTest {
         // 无占位符不会脱敏
         log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
                 user.getAddr(), user.getName(), user.getPhone(), null);
+        log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
+                user.getAddr(), stringMapper.toBean("[\"hello\", \"world!\"]", JsonNode.class), user.getPhone(), null); //Arrays.asList("hello", "world!").iterator()
 
         log.info("日志脱敏格式5(参数含异常对象)：{name} {e}", "hello", new RuntimeException("123"));
     }
