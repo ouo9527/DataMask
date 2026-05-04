@@ -6,6 +6,7 @@ import com.ouo.mask.core.DefaultDesensitizationExecutor;
 import com.ouo.mask.core.DesensitizationExecutor;
 import com.ouo.mask.core.rule.DesensitizationProperties;
 import com.ouo.mask.jackson.JacksonObjectMapper;
+import com.ouo.mask.semi.SemiStructuredMapper;
 import com.ouo.mask.spel.BraceSpelExpressionEvaluator;
 import com.ouo.mask.spel.DollarSpelExpressionEvaluator;
 import com.ouo.mask.spel.PoundSpelExpressionEvaluator;
@@ -59,8 +60,8 @@ public class DesensitizationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public DesensitizationExecutor desensitizationExecutor(DesensitizationProperties properties
-            , JacksonObjectMapper objectMapper) {
-        return new DefaultDesensitizationExecutor(properties, objectMapper);
+            , SemiStructuredMapper mapper) {
+        return new DefaultDesensitizationExecutor(properties, mapper);
     }
 
     @Bean
