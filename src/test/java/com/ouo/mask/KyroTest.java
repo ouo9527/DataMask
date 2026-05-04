@@ -94,7 +94,6 @@ public class KyroTest {
 
         Kryo kryo = kryoThreadLocal.get();
         // 对象序列化
-        //kryo.setDefaultSerializer(new DesensitizationFieldSerializerFactory(scene, this));
         //System.out.println("Hutool浅拷贝：" + BeanUtil.toBean(user, User.class));
         //System.out.println("FST深拷贝：" + fstConfiguration.deepCopy(user).getName());
         //System.out.println("Kryo深拷贝：" + kryo.copy(user));

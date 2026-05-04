@@ -68,7 +68,6 @@ public class DesensitizationProperties {
     private DesensitizationRule convert(String field, Map rule) {
         DesensitizationRule dr = null;
         String mode = MapUtil.getStr(rule, "mode", "");
-        String scene = MapUtil.getStr(rule, "scene", "");
 
         if (StrUtil.equalsIgnoreCase(mode, ModeEnum.EMPTY.name())) { // 置空
             dr = new EmptyDesensitizationRule();

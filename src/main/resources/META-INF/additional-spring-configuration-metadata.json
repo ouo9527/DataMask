@@ -135,20 +135,40 @@
           "description": "全名"
         },
         {
-          "value": "hash",
-          "description": "哈希"
+          "value": "id_card",
+          "description": "身份证号"
         },
         {
-          "value": "regex",
-          "description": "正则"
+          "value": "fixed_phone",
+          "description": "座机号（固话）"
         },
         {
-          "value": "repl",
-          "description": "替换"
+          "value": "mobile_phone",
+          "description": "手机号（移动电话）"
         },
         {
-          "value": "mask",
-          "description": "掩盖"
+          "value": "address",
+          "description": "地址"
+        },
+        {
+          "value": "email",
+          "description": "电子邮件"
+        },
+        {
+          "value": "car_license",
+          "description": "中国大陆车牌（包含普通车辆、新能源车辆）"
+        },
+        {
+          "value": "bank_card",
+          "description": "银行卡"
+        },
+        {
+          "value": "passport",
+          "description": "护照"
+        },
+        {
+          "value": "number",
+          "description": "数值"
         }
       ]
     }
