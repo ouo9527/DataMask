@@ -1,9 +1,8 @@
 package com.ouo.mask.support.web;
 
 import cn.hutool.core.annotation.AnnotationUtil;
-import com.ouo.mask.core.Desensitizer;
-import com.ouo.mask.core.annotation.Desensitization;
-import com.ouo.mask.core.enums.SceneEnum;
+import com.ouo.mask.core.DesensitizationExecutor;
+import com.ouo.mask.core.annotation.Desensitize;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
@@ -29,14 +28,15 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
     @Autowired(required = false)
-    private Desensitizer desensitizer;
+    private DesensitizationExecutor desensitizationExecutor;
     @Autowired(required = false)
     private UserMaskPermission userMaskPermission;
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        if (null != desensitizer && null != returnType && !Void.TYPE.equals(returnType.getMethod().getReturnType())) {
-            Boolean enabled = AnnotationUtil.getAnnotationValue(returnType.getMethod(), Desensitization.class,
+        if (null != desensitizationExecutor && null != returnType
+                && !Void.TYPE.equals(returnType.getMethod().getReturnType())) {
+            Boolean enabled = AnnotationUtil.getAnnotationValue(returnType.getMethod(), Desensitize.class,
                     "enabled");
             return null == enabled || enabled;
         }
@@ -48,6 +48,6 @@ public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Obj
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
         return (null != userMaskPermission && userMaskPermission.hasNotPermission(request)) ? body :
-                desensitizer.desensitized(SceneEnum.WEB, body);
+                desensitizationExecutor.desensitize(body);
     }
 }

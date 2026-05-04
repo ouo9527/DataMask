@@ -1,7 +1,6 @@
 package com.ouo.mask.core.rule;
 
-import com.ouo.mask.core.enums.ModeEnum;
-import com.ouo.mask.core.enums.SceneEnum;
+import com.ouo.mask.core.annotation.ModeEnum;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -16,9 +15,6 @@ import lombok.ToString;
 @Getter
 @ToString
 public abstract class DesensitizationRule {
-    //场景
-    //@JSONField(serializeFeatures = JSONWriter.Feature.WriteEnumsUsingName)
-    protected SceneEnum scene = SceneEnum.ALL;
     //字段
     protected String field;
     //模式

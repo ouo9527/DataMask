@@ -29,7 +29,7 @@ public class LogbackDesensitizeConverter extends MessageConverter implements Log
     public String convert(ILoggingEvent event) {
         try {
             return this.resolvePlaceholder(event.getLoggerName(), event.getMessage(), event.getArgumentArray());
-        } catch (Throwable e) {
+        } catch (Throwable ignore) {
             //会引发死循环，从而造成栈溢出
             //log.error("从Sping容器中加载DesensitizationRule脱敏规则异常：", e);
             return super.convert(event);

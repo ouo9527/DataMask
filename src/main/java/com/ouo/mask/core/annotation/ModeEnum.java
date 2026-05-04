@@ -1,25 +1,30 @@
-package com.ouo.mask.core.enums;
+package com.ouo.mask.core.annotation;
 
 import lombok.Getter;
 
 /***********************************************************
- * 脱敏场景
+ * 脱敏模式
  *
  * Author:   ouo
  * Date:     2023/1/29
  ***********************************************************/
 @Getter
-public enum SceneEnum {
-    // WEB
-    WEB(10),
-    // LOG
-    LOG(20),
-    // WEB and LOG
-    ALL(0);
+public enum ModeEnum {
+    // 置空
+    //gson枚举映射: @SerializedName(value = "empty", alternate = "EMPTY")
+    EMPTY(10),
+    // 哈希
+    HASH(20),
+    // 正则
+    REGEX(30),
+    // 替换
+    REPL(40),
+    // 掩盖
+    MASK(50);
 
     private int code;
 
-    SceneEnum(int code) {
+    ModeEnum(int code) {
         this.code = code;
     }
 

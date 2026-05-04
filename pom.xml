@@ -65,7 +65,7 @@
         <!--<dom4j.version>2.1.4</dom4j.version>-->
         <!-- XPath -->
         <!--<jaxen.version>1.1.6</jaxen.version>-->
-        <jackson.version>2.13.5</jackson.version>
+        <jackson.version>2.15.4</jackson.version>
         <!-- Hutool -->
         <hutool.version>5.8.38</hutool.version>
         <!-- bouncycastle：密钥算法 -->
@@ -97,6 +97,14 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Jackson BOM依赖 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Spring Boot BOM依赖管理 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -110,14 +118,6 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
                 <version>${spring.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <!-- Jackson BOM依赖 -->
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -180,7 +180,10 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-afterburner</artifactId>
+            <!-- 基于ByteBuddy（对现代JVM兼容性好）-->
+            <artifactId>jackson-module-blackbird</artifactId>
+            <!-- 基于ASM（对Java9+兼容性差）-->
+            <!--<artifactId>jackson-module-afterburner</artifactId>-->
         </dependency>
         <!-- Kryo：依赖objenesis -->
         <dependency>

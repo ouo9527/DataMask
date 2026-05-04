@@ -5,9 +5,8 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.map.MapUtil;
 import com.ouo.mask.core.annotation.Hash;
-import com.ouo.mask.core.enums.ModeEnum;
-import com.ouo.mask.core.enums.SceneEnum;
-import com.ouo.mask.core.enums.SensitiveTypeEnum;
+import com.ouo.mask.core.annotation.ModeEnum;
+import com.ouo.mask.core.annotation.SensitiveTypeEnum;
 import com.ouo.mask.util.StrUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -112,9 +111,6 @@ public class DesensitizationProperties {
         }
 
         if (null != dr) {
-            if (StrUtil.isNotBlank(scene)) {
-                dr.setScene(Convert.convert(SceneEnum.class, StrUtil.toUpperCase(scene), SceneEnum.ALL));
-            }
             dr.setField(field);
         }
 

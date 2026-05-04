@@ -2,13 +2,13 @@ package com.ouo.mask;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.ouo.mask.core.DefaultDesensitizer;
-import com.ouo.mask.core.Desensitizer;
+import com.ouo.mask.core.DefaultDesensitizationExecutor;
+import com.ouo.mask.core.DesensitizationExecutor;
 import com.ouo.mask.core.rule.DesensitizationProperties;
 import com.ouo.mask.jackson.JacksonObjectMapper;
-import com.ouo.mask.spel.BraceSpelExpressionResolver;
-import com.ouo.mask.spel.DollarSpelExpressionResolver;
-import com.ouo.mask.spel.PoundSpelExpressionResolver;
+import com.ouo.mask.spel.BraceSpelExpressionEvaluator;
+import com.ouo.mask.spel.DollarSpelExpressionEvaluator;
+import com.ouo.mask.spel.PoundSpelExpressionEvaluator;
 import com.ouo.mask.support.web.DesensitizationResponseBodyAdvice;
 import com.ouo.mask.util.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -58,26 +58,26 @@ public class DesensitizationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Desensitizer desensitizationHandler(DesensitizationProperties properties
+    public DesensitizationExecutor desensitizationExecutor(DesensitizationProperties properties
             , JacksonObjectMapper objectMapper) {
-        return new DefaultDesensitizer(properties, objectMapper);
+        return new DefaultDesensitizationExecutor(properties, objectMapper);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public BraceSpelExpressionResolver braceSpelExpressionResolver() {
-        return new BraceSpelExpressionResolver();
+    public BraceSpelExpressionEvaluator braceSpelExpressionEvaluator() {
+        return new BraceSpelExpressionEvaluator();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public DollarSpelExpressionResolver dollarSpelExpressionResolver() {
-        return new DollarSpelExpressionResolver();
+    public DollarSpelExpressionEvaluator dollarSpelExpressionEvaluator() {
+        return new DollarSpelExpressionEvaluator();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public PoundSpelExpressionResolver poundSpelExpressionResolver() {
-        return new PoundSpelExpressionResolver();
+    public PoundSpelExpressionEvaluator poundSpelExpressionEvaluator() {
+        return new PoundSpelExpressionEvaluator();
     }
 }

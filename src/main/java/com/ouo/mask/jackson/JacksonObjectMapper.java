@@ -8,19 +8,17 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
 import com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.ouo.mask.semi.SemiStructType;
-import com.ouo.mask.semi.StringMapper;
+import com.ouo.mask.semi.SemiStructuredMapper;
 import com.ouo.mask.util.StrUtil;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.Function;
 
 /***********************************************************
  * Jackson序列化/反序列化映射器（用于处理JSON/XMl半结构化字符串）
@@ -28,22 +26,23 @@ import java.util.function.Function;
  * Author:   ouo
  * Date:     2026/4/5
  ***********************************************************/
-@Getter
-@Setter
-public class JacksonObjectMapper implements StringMapper {
+public class JacksonObjectMapper implements SemiStructuredMapper {
     // json处理器
     private final JsonMapper jsonMapper;
     // xml处理器
     private final XmlMapper xmlMapper;
 
-    public JacksonObjectMapper(Optional<JsonMapper> jsonMapperOptional
-            , Optional<XmlMapper> xmlMapperOptional) {
+    public JacksonObjectMapper() {
+        this(Optional.empty(), Optional.empty());
+    }
 
+    public JacksonObjectMapper(Optional<JsonMapper> jsonMapperOptional, Optional<XmlMapper> xmlMapperOptional) {
         // 当Jackson启用Afterburner时，性能差不多接近Kryo
-        AfterburnerModule afterburnerModule = new AfterburnerModule();
+        //AfterburnerModule afterburnerModule = new AfterburnerModule();
+        BlackbirdModule blackbirdModule = new BlackbirdModule();
         // Json脱敏序列化（注解@JsonSerialize优先于modifySerializer，因此需要重写changeProperties方法）
-        //SimpleModule simpleModule = new SimpleModule()
-        //        .setSerializerModifier(new CharSequenceSerializerModifier());
+        SimpleModule simpleModule = new SimpleModule()
+                .setSerializerModifier(new JacksonBeanSerializerModifier());
         // 将&lt;xx>&lt;/xx>转<![CDATA[]]>处理
         /*simpleModule.addSerializer(String.class, new StdSerializer<String>(String.class) {
             @Override
@@ -111,7 +110,7 @@ public class JacksonObjectMapper implements StringMapper {
                 .enable(SerializationFeature.USE_EQUALITY_FOR_OBJECT_ID) // 启用引用标识处理(利用对象相等性判断，但非内存地址)，但需要搭配@JsonIdentityInfo注解使用，自动用 "@id" 和 "@ref" 标记重复对象，
                 //.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
-                .registerModules(afterburnerModule);
+                .registerModules(blackbirdModule, simpleModule);
 
         this.xmlMapper = (XmlMapper) xmlMapperOptional
                 .map(XmlMapper::copy)
@@ -122,17 +121,17 @@ public class JacksonObjectMapper implements StringMapper {
                 .enable(SerializationFeature.USE_EQUALITY_FOR_OBJECT_ID) // 启用引用标识处理(利用对象相等性判断，但非内存地址)，但需要搭配@JsonIdentityInfo注解使用，自动用 "@id" 和 "@ref" 标记重复对象，
                 //.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
-                .registerModules(afterburnerModule);
+                .registerModules(blackbirdModule, simpleModule);
 
     }
 
     /**
      * 从Jackson中XmlMapper获取xml字符串根节点
      *
-     * @param xmlParser
-     * @return
+     * @param xmlParser XML解析器
+     * @return 返回XML字符串
      */
-    private static String getXmlRoot(FromXmlParser xmlParser) {
+    public static String getXmlRoot(FromXmlParser xmlParser) {
         if (null == xmlParser.currentToken()) {
             // 尝试获取下个Token
             try {
@@ -141,7 +140,7 @@ public class JacksonObjectMapper implements StringMapper {
                     XmlTokenStream _xmlTokens = (XmlTokenStream) ReflectUtil.getFieldValue(xmlParser, "_xmlTokens");
                     return _xmlTokens.getLocalName();
                 }
-            } catch (Exception e) {
+            } catch (Exception ignore) {
                 // 获取不到根节点
             }
         }
@@ -163,64 +162,6 @@ public class JacksonObjectMapper implements StringMapper {
         throw new IllegalStateException("Unstructured data other than JSON and XML is not supported for conversion to Java Bean at this time.");
     }
 
-    @Override
-    public String transform(String str, boolean isPretty, Function<Object, Object> fn) {
-        try {
-            return StrUtil.isTypeJson(str) ? this.transformJson(str, isPretty, fn) : this.transformXml(str, isPretty, fn);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    /**
-     * 转换JSON字符串
-     *
-     * @param json     JSON字符串
-     * @param isPretty 是否美化
-     * @param fn       回调函数
-     * @return 返回转换后JSON字符串
-     */
-    private String transformJson(String json, boolean isPretty, Function<Object, Object> fn) throws JsonProcessingException {
-        Object obj = fn.apply(this.jsonMapper.readValue(json, Object.class));
-        return (isPretty ? this.toPrettyString(obj, SemiStructType.JSON) : this.toString(obj, SemiStructType.JSON));
-    }
-
-    /**
-     * 转换XML字符串
-     *
-     * @param xml      XML字符串
-     * @param isPretty 是否美化
-     * @param fn       回调函数
-     * @return 返回转换后XML字符串
-     */
-    private String transformXml(String xml, boolean isPretty, Function<Object, Object> fn) throws IOException {
-        try (FromXmlParser parser = (FromXmlParser) this.xmlMapper.createParser(xml)) {
-            // 获取xml字符串根节点
-            String rootName = JacksonObjectMapper.getXmlRoot(parser);
-            // 包装XML片段
-            if (StrUtil.isBlank(rootName)) {
-                try {
-                    parser.close();
-                } catch (IOException ignore) {
-                    //log.debug("【{}】XML片段流关闭异常：", val, e);
-                }
-
-                return this.transformXml(StrUtil.wrapXml(xml), isPretty, fn);
-            }
-
-            Object obj = fn.apply(parser.readValueAs(Object.class));
-            String val = (isPretty && !StrUtil.DEFAULT_ROOT_NAME.equals(rootName)
-                    ? this.toPrettyString(obj, SemiStructType.XML, rootName) : this.toString(obj, SemiStructType.XML, rootName));
-
-            // 移除XML片段包装(不换行)
-            if (StrUtil.DEFAULT_ROOT_NAME.equals(rootName)) {
-                return StrUtil.strip(val, StrUtil.DEFAULT_START_ROOT_NODE,
-                        StrUtil.DEFAULT_END_ROOT_NODE);
-            }
-
-            return val;
-        }
-    }
 
     @Override
     public String toString(Object obj, SemiStructType type, String rootName) {
@@ -230,6 +171,12 @@ public class JacksonObjectMapper implements StringMapper {
     @Override
     public String toPrettyString(Object obj, SemiStructType type, String rootName) {
         return this.toString(obj, type, rootName, true);
+    }
+
+    @Override
+    public <T> T getMapper(SemiStructType type) {
+        return (T) (SemiStructType.JSON.equals(type) ? this.jsonMapper : SemiStructType.XML.equals(type)
+                ? this.xmlMapper : null);
     }
 
     /**
@@ -244,11 +191,6 @@ public class JacksonObjectMapper implements StringMapper {
             String rootName = getXmlRoot(parser);
             // 包装XML片段
             if (StrUtil.isBlank(rootName)) {
-                try {
-                    parser.close();
-                } catch (IOException e) {
-                }
-
                 return readValueAs(StrUtil.wrapXml(str), valueType);
             }
 

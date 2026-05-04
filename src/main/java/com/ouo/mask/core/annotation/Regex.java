@@ -1,7 +1,5 @@
 package com.ouo.mask.core.annotation;
 
-import com.ouo.mask.core.enums.SceneEnum;
-
 import java.lang.annotation.*;
 
 /***********************************************************
@@ -16,9 +14,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface Regex {
-    // 场景，默认：WEB和LOG
-    SceneEnum scene() default SceneEnum.ALL;
-
     // 正则表达式，Java正则特殊符号必须使用2个反斜杠，如：(\\d{3})\\d{4}(\\d{4})
     String pattern();
 

@@ -15,17 +15,10 @@
     },
     {
       "name": "ouo.desens.rules[].mode",
-      "type": "com.ouo.mask.core.enums.ModeEnum",
+      "type": "com.ouo.mask.core.annotation.ModeEnum",
       "description": "脱敏模式：置空empty、哈希hash、正则regex、替换repl、掩盖mask",
       "sourceType": "com.ouo.mask.core.rule.DesensitizationRule",
       "defaultValue": "mask"
-    },
-    {
-      "name": "ouo.desens.rules[].scene",
-      "type": "com.ouo.mask.core.enums.SceneEnum",
-      "description": "脱敏场景：日志log、网页web、全部all，默认all",
-      "sourceType": "com.ouo.mask.core.rule.DesensitizationRule",
-      "defaultValue": "all"
     },
     {
       "name": "ouo.desens.rules.*.algorithm",
@@ -41,8 +34,8 @@
       "sourceType": "com.ouo.mask.core.rule.HashDesensitizationRule"
     },
     {
-      "name": "ouo.desens.rules.*.type",
-      "type": "com.ouo.mask.core.enums.SensitiveTypeEnum",
+      "name": "ouo.desens.rules[].type",
+      "type": "com.ouo.mask.core.annotation.SensitiveTypeEnum",
       "description": "敏感类型，采用内置脱敏配置",
       "sourceType": "com.ouo.mask.core.rule.MaskDesensitizationRule"
     },
@@ -110,7 +103,7 @@
   ],
   "hints": [
     {
-      "name": "ouo.desens.rules.*.mode",
+      "name": "ouo.desens.rules[].mode",
       "values": [
         {
           "value": "empty",
@@ -135,19 +128,27 @@
       ]
     },
     {
-      "name": "ouo.desens.rules.*.scene",
+      "name": "ouo.desens.rules[].type",
       "values": [
         {
-          "value": "web",
-          "description": "web网页场景"
+          "value": "full_name",
+          "description": "全名"
         },
         {
-          "value": "log",
-          "description": "log日志场景"
+          "value": "hash",
+          "description": "哈希"
         },
         {
-          "value": "all",
-          "description": "web和log场景"
+          "value": "regex",
+          "description": "正则"
+        },
+        {
+          "value": "repl",
+          "description": "替换"
+        },
+        {
+          "value": "mask",
+          "description": "掩盖"
         }
       ]
     }

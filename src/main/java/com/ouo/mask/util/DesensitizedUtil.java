@@ -8,7 +8,6 @@ import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.Digester;
 import cn.hutool.crypto.digest.MD5;
 import com.ouo.mask.core.annotation.*;
-import com.ouo.mask.core.enums.SceneEnum;
 import com.ouo.mask.core.rule.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,47 +25,43 @@ import java.util.regex.Pattern;
 public abstract class DesensitizedUtil {
 
     /**
-     * 置空模式(脱敏后不等长)：根据场景匹配规则脱敏该字段的数据
+     * 置空模式(脱敏后不等长)：根据规则脱敏该字段的数据
      *
-     * @param scene     脱敏场景
-     * @param rule      脱敏规则
-     * @param fieldName 待脱敏字段名
-     * @param data      待脱敏数据
+     * @param rule          脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String emptyDesensitized(SceneEnum scene, EmptyDesensitizationRule rule, String fieldName, String data) {
-        return matches(scene, rule, fieldName, data) ? "" : data;
+    public static String emptyDesensitized(EmptyDesensitizationRule rule, String fieldName, String data) {
+        return matches(rule, fieldName, data) ? "" : data;
     }
 
     /**
-     * 置空模式(脱敏后不等长)：根据场景匹配注解中规则脱敏该字段的数据
+     * 置空模式(脱敏后不等长)：根据注解中规则脱敏该字段的数据
      *
-     * @param scene      脱敏场景
-     * @param annotation 脱敏规则
-     * @param fieldName  待脱敏字段名
-     * @param data       待脱敏数据
+     * @param annotation    脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String emptyDesensitized(SceneEnum scene, Empty annotation, String fieldName, String data) {
+    public static String emptyDesensitized(Empty annotation, String fieldName, String data) {
         if (null == annotation) return data;
         EmptyDesensitizationRule rule = new EmptyDesensitizationRule();
-        rule.setScene(annotation.scene());
         rule.setField(fieldName);
 
-        return emptyDesensitized(scene, rule, fieldName, data);
+        return emptyDesensitized(rule, fieldName, data);
     }
 
     /**
-     * Hash模式(脱敏后不等长)：根据场景匹配规则脱敏该字段的数据
+     * Hash模式(脱敏后不等长)：根据规则脱敏该字段的数据
      *
-     * @param scene     脱敏场景
-     * @param rule      脱敏规则
-     * @param fieldName 待脱敏字段名
-     * @param data      待脱敏数据
+     * @param rule          脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String hashDesensitized(SceneEnum scene, HashDesensitizationRule rule, String fieldName, String data) {
-        if (!matches(scene, rule, fieldName, data)) return data;
+    public static String hashDesensitized(HashDesensitizationRule rule, String fieldName, String data) {
+        if (!matches(rule, fieldName, data)) return data;
         switch (rule.getAlgorithm()) {
             case HASH256:
                 return new Digester(DigestAlgorithm.SHA256)
@@ -84,36 +79,33 @@ public abstract class DesensitizedUtil {
     }
 
     /**
-     * Hash模式(脱敏后不等长)：根据场景匹配Hash注解中规则脱敏该字段的数据
+     * Hash模式(脱敏后不等长)：根据Hash注解中规则脱敏该字段的数据
      *
-     * @param scene      脱敏场景
-     * @param annotation 脱敏规则
-     * @param fieldName  待脱敏字段名
-     * @param data       待脱敏数据
+     * @param annotation    脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String hashDesensitized(SceneEnum scene, Hash annotation, String fieldName, String data) {
+    public static String hashDesensitized(Hash annotation, String fieldName, String data) {
         if (null == annotation) return data;
         HashDesensitizationRule rule = new HashDesensitizationRule();
-        rule.setScene(annotation.scene());
         rule.setField(fieldName);
         rule.setAlgorithm(annotation.algorithm());
         rule.setSalt(annotation.salt());
 
-        return desensitized(scene, rule, fieldName, data);
+        return desensitized(rule, fieldName, data);
     }
 
     /**
-     * 正则模式(脱敏后可能不等长)：根据场景匹配规则脱敏该字段的数据
+     * 正则模式(脱敏后可能不等长)：根据规则脱敏该字段的数据
      *
-     * @param scene     脱敏场景
-     * @param rule      脱敏规则
-     * @param fieldName 待脱敏字段名
-     * @param data      待脱敏数据
+     * @param rule          脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String regexDesensitized(SceneEnum scene, RegexDesensitizationRule rule, String fieldName, String data) {
-        if (!matches(scene, rule, fieldName, data)) return data;
+    public static String regexDesensitized(RegexDesensitizationRule rule, String fieldName, String data) {
+        if (!matches(rule, fieldName, data)) return data;
         //Java正则特殊符号必须使用1个反斜杠进行转义，如：(\\d{3})\\d{4}(\\d{4})，yml配置文件中无需使用\转义符，只需符合正则语法即可，但properties中如Java，经验证，可一个或三个，最终都会被换成1个
         //替换值：$1####$2，如：17788485848脱敏后177####5848
         if (StrUtil.isNotBlank(rule.getPattern())) {
@@ -123,36 +115,33 @@ public abstract class DesensitizedUtil {
     }
 
     /**
-     * 正则模式(脱敏后不等长)：根据场景匹配正则注解中规则脱敏该字段的数据
+     * 正则模式(脱敏后不等长)：根据正则注解中规则脱敏该字段的数据
      *
-     * @param scene      脱敏场景
-     * @param annotation 脱敏规则
-     * @param fieldName  待脱敏字段名
-     * @param data       待脱敏数据
+     * @param annotation    脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String regexDesensitized(SceneEnum scene, Regex annotation, String fieldName, String data) {
+    public static String regexDesensitized(Regex annotation, String fieldName, String data) {
         if (null == annotation) return data;
         RegexDesensitizationRule rule = new RegexDesensitizationRule();
-        rule.setScene(annotation.scene());
         rule.setField(fieldName);
         rule.setPattern(annotation.pattern());
         rule.setRv(annotation.rv());
 
-        return desensitized(scene, rule, fieldName, data);
+        return desensitized(rule, fieldName, data);
     }
 
     /**
-     * 替换模式(脱敏后等长)：根据场景匹配规则脱敏该字段的数据
+     * 替换模式(脱敏后等长)：根据规则脱敏该字段的数据
      *
-     * @param scene     脱敏场景
-     * @param rule      脱敏规则
-     * @param fieldName 待脱敏字段名
-     * @param data      待脱敏数据
+     * @param rule          脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String replDesensitized(SceneEnum scene, ReplDesensitizationRule rule, String fieldName, String data) {
-        if (!matches(scene, rule, fieldName, data)) return data;
+    public static String replDesensitized(ReplDesensitizationRule rule, String fieldName, String data) {
+        if (!matches(rule, fieldName, data)) return data;
         int index = 0;
         String val = data;
         //前几位
@@ -175,18 +164,16 @@ public abstract class DesensitizedUtil {
     }
 
     /**
-     * 替换模式(脱敏后等长)：根据场景匹配替换注解中规则脱敏该字段的数据
+     * 替换模式(脱敏后等长)：根据替换注解中规则脱敏该字段的数据
      *
-     * @param scene      脱敏场景
-     * @param annotation 脱敏规则
-     * @param fieldName  待脱敏字段名
-     * @param data       待脱敏数据
+     * @param annotation    脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String replDesensitized(SceneEnum scene, Repl annotation, String fieldName, String data) {
+    public static String replDesensitized(Repl annotation, String fieldName, String data) {
         if (null == annotation) return data;
         ReplDesensitizationRule rule = new ReplDesensitizationRule();
-        rule.setScene(annotation.scene());
         rule.setField(fieldName);
 
         ReplDesensitizationRule.Posn surplus = new ReplDesensitizationRule.Posn();
@@ -210,14 +197,20 @@ public abstract class DesensitizedUtil {
         }
         rule.setPosns(posns);
 
-        return replDesensitized(scene, rule, fieldName, data);
+        return replDesensitized(rule, fieldName, data);
     }
 
-
-    public static String maskDesensitized(SceneEnum scene, Mask annotation, String fieldName, String data) {
+    /**
+     * 掩盖模式(脱敏后等长)：根据掩盖注解中规则脱敏该字段的数据
+     *
+     * @param annotation 脱敏规则
+     * @param fieldName  待脱敏字段名
+     * @param data       待脱敏数据
+     * @return 返回脱敏后数据
+     */
+    public static String maskDesensitized(Mask annotation, String fieldName, String data) {
         if (null == annotation) return data;
         MaskDesensitizationRule rule = new MaskDesensitizationRule();
-        rule.setScene(annotation.scene());
         rule.setField(fieldName);
         rule.setType(annotation.type());
 
@@ -227,11 +220,11 @@ public abstract class DesensitizedUtil {
             show.setSuf(annotation.show().suf());
             rule.setShow(show);
         }
-        return maskDesensitized(scene, rule, fieldName, data);
+        return maskDesensitized(rule, fieldName, data);
     }
 
     /**
-     * 掩盖模式(脱敏后等长)：根据场景匹配掩盖注解中规则脱敏该字段的数据
+     * 掩盖模式(脱敏后等长)：根据规则脱敏该字段的数据
      * 1、姓名：默认自动根据字符长度显示，当长度小于等于2，则显示第1个字符，否则显示前2个字符
      * 2、手机号：大陆-11位、台湾-10位、香港澳门-8位。默认自动根据字符长度显示大陆-前3后4、台湾-前3后3、香港澳门-前2后2
      * 3、固话：由3～4位区号+7～8位固定数字组成。默认自动根据字符长度显示，当区号小于等于3，则显示前3后2，否则前4后2
@@ -243,14 +236,13 @@ public abstract class DesensitizedUtil {
      * 9、护照：由1位字母（护照类型）+8位数字组成。默认显示前1后3
      * 10、数值：默认显示第1位
      *
-     * @param scene     脱敏场景
-     * @param rule      脱敏规则
-     * @param fieldName 待脱敏字段名
-     * @param data      待脱敏数据
+     * @param rule          脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String maskDesensitized(SceneEnum scene, MaskDesensitizationRule rule, String fieldName, String data) {
-        if (!matches(scene, rule, fieldName, data)) return data;
+    public static String maskDesensitized(MaskDesensitizationRule rule, String fieldName, String data) {
+        if (!matches(rule, fieldName, data)) return data;
         int len = StrUtil.length(data);
         if ((null == rule.getShow()) || (0 >= rule.getShow().getPre() && 0 >= rule.getShow().getSuf())) {
             switch (rule.getType()) {
@@ -355,33 +347,32 @@ public abstract class DesensitizedUtil {
     }
 
     /**
-     * 根据场景匹配规则脱敏该字段的数据
+     * 根据规则脱敏该字段的数据
      *
-     * @param scene     脱敏场景
-     * @param rule      脱敏规则
-     * @param fieldName 待脱敏字段名
-     * @param data      待脱敏数据
+     * @param rule          脱敏规则
+     * @param fieldName     待脱敏字段名
+     * @param data          待脱敏数据
      * @return 返回脱敏后数据
      */
-    public static String desensitized(SceneEnum scene, DesensitizationRule rule, String fieldName, String data) {
-        if (null == scene || StrUtil.isBlank(fieldName) || StrUtil.isBlank(data)) {
+    public static String desensitized(DesensitizationRule rule, String fieldName, String data) {
+        if (StrUtil.isBlank(fieldName) || StrUtil.isBlank(data)) {
             return data;
         }
         //脱敏规则
         if (rule instanceof EmptyDesensitizationRule) {//置空(脱敏后不等长)
-            return emptyDesensitized(scene, (EmptyDesensitizationRule) rule, fieldName, data);
+            return emptyDesensitized((EmptyDesensitizationRule) rule, fieldName, data);
         }
         if (rule instanceof HashDesensitizationRule) {//HASH(脱敏后不等长)
-            return hashDesensitized(scene, (HashDesensitizationRule) rule, fieldName, data);
+            return hashDesensitized((HashDesensitizationRule) rule, fieldName, data);
         }
         if (rule instanceof RegexDesensitizationRule) {//正则(脱敏后可能不等长)
-            return regexDesensitized(scene, (RegexDesensitizationRule) rule, fieldName, data);
+            return regexDesensitized((RegexDesensitizationRule) rule, fieldName, data);
         }
         if (rule instanceof ReplDesensitizationRule) {//替换(脱敏后等长)
-            return replDesensitized(scene, (ReplDesensitizationRule) rule, fieldName, data);
+            return replDesensitized((ReplDesensitizationRule) rule, fieldName, data);
         }
         if (rule instanceof MaskDesensitizationRule) {//掩盖(脱敏后等长)
-            return maskDesensitized(scene, (MaskDesensitizationRule) rule, fieldName, data);
+            return maskDesensitized((MaskDesensitizationRule) rule, fieldName, data);
         }
         // 根据正则进行数据特征匹配脱敏（精确度不，待定）
         return data;
@@ -416,16 +407,14 @@ public abstract class DesensitizedUtil {
     /**
      * 校验脱敏是否匹配
      *
-     * @param scene     脱敏场景
      * @param rule      脱敏规则
      * @param fieldName 待脱敏字段名
      * @param data      待脱敏数据
      * @return 返回匹配结果
      */
-    private static boolean matches(SceneEnum scene, DesensitizationRule rule, String fieldName, String data) {
-        log.debug("校验是否不能脱敏：脱敏场景={}, 脱敏规则={}, 待脱敏字段={}", scene, rule, fieldName);
+    private static boolean matches(DesensitizationRule rule, String fieldName, String data) {
+        log.debug("校验是否不能脱敏：脱敏场景={}, 脱敏规则={}, 待脱敏字段={}", rule, fieldName);
         //通过驼峰匹配
-        return !((StrUtil.isBlank(data) || null == rule || !StrUtil.equals(StrUtil.toCamelCase2(fieldName), StrUtil.toCamelCase2(rule.getField()))
-                || null == scene) || (SceneEnum.ALL != scene && SceneEnum.ALL != rule.getScene() && null != rule.getScene() && scene != rule.getScene()));
+        return !((StrUtil.isBlank(data) || null == rule || !StrUtil.equals(StrUtil.toCamelCase2(fieldName), StrUtil.toCamelCase2(rule.getField()))));
     }
 }

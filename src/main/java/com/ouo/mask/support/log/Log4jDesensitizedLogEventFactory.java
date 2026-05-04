@@ -32,7 +32,7 @@ public class Log4jDesensitizedLogEventFactory implements LogEventFactory, LogDes
         Message newMessage = message;
         try {
             newMessage = new SimpleMessage(this.resolvePlaceholder(loggerName, message.getFormat(), message.getParameters()));
-        } catch (Throwable e) {
+        } catch (Throwable ignore) {
             //会引发死循环，从而造成栈溢出
             //log.error("从Sping容器中加载DesensitizationRule脱敏规则异常：", e);
         }

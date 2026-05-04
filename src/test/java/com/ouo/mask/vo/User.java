@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.ouo.mask.core.annotation.*;
-import com.ouo.mask.core.enums.SensitiveTypeEnum;
 import com.ouo.mask.jackson.CharSequenceSerializer;
 import lombok.Getter;
 import lombok.Setter;

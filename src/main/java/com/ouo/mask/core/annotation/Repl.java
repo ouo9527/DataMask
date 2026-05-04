@@ -1,7 +1,5 @@
 package com.ouo.mask.core.annotation;
 
-import com.ouo.mask.core.enums.SceneEnum;
-
 import java.lang.annotation.*;
 
 /***********************************************************
@@ -16,9 +14,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface Repl {
-    // 场景，默认：WEB和LOG
-    SceneEnum scene() default SceneEnum.ALL;
-
     // 位置，按照数组顺序从左往右进行替换
     Posn[] posns();
 

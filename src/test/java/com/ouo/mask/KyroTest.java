@@ -6,12 +6,7 @@ import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.serializers.DefaultSerializers;
-import com.esotericsoftware.kryo.serializers.DesensitizingFieldSerializer;
-import com.esotericsoftware.kryo.serializers.DesensitizingMapSerializer;
-import com.esotericsoftware.kryo.serializers.MapSerializer;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
-import com.ouo.mask.kryo.DesensitizingKryo;
 import com.ouo.mask.vo.User;
 import org.junit.jupiter.api.Test;
 import org.objenesis.strategy.StdInstantiatorStrategy;
@@ -19,8 +14,9 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /***********************************************************
  * Kryo高性能序列化/反序列化/拷贝单元测试
@@ -45,29 +41,26 @@ public class KyroTest {
 
         this.kryoThreadLocal = ThreadLocal.withInitial(() -> {
             // Kryo（线程不安全）：copy方法支持transient修饰属性拷贝（但序列化不支持），不支持非静态内部类和只依赖无参构造函数，可以使用objenesis框架的StdInstantiatorStrategy策略解决
-            Kryo kryo = new DesensitizingKryo(null);
+            Kryo kryo = new Kryo();
             kryo.setReferences(true); // 开启序列化时引用共享（避免死循环）
             kryo.setCopyReferences(true); // 启用拷贝时引用共享（深拷贝场景）
             kryo.setRegistrationRequired(false); // 关闭强制注册
-            //kryo.setOptimizedGenerics(true);  // 启用泛型推导即自动推断泛型类型，避免重复写入类信息（需启用优化）（默认开启）
+            //this.setOptimizedGenerics(true);  // 启用泛型推导即自动推断泛型类型，避免重复写入类信息（需启用优化）（默认开启）
             // 使用 Objenesis 策略（支持非静态内部类和只依赖无参构造函数）
             kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-
             // kryo.register：自定义序列化器，可以替换DefaultSerializers中定义内置（基本类型+string类型）序列化器，但不能替换UnsafeField中定义内置序列化器
             //kryo.register(String[].class, new StringSerializer(new DefaultArraySerializers.StringArraySerializer()));
-            //kryo.register(String.class, new StringSerializer(new DefaultSerializers.StringSerializer()));
-            //kryo.register(StringBuilder.class, new StringSerializer(new DefaultSerializers.StringBuilderSerializer()));
-            //kryo.register(StringBuffer.class, new StringSerializer(new DefaultSerializers.StringBufferSerializer()));
+
             // kryo.setDefaultSerializer：自定义序列化器，可以替换FieldSerializerFactory中定义内置序列化器，如：替换UnsafeField序列化器
-            kryo.setDefaultSerializer(DesensitizingFieldSerializer.class);
+            //kryo.setDefaultSerializer(DesensitizingFieldSerializer.class);
+
             // kryo.addDefaultSerializer：自定义序列化器，可以替换非register和setDefaultSerializer注册的序列化器，如：StringBuilder、StringBuffer、Map、集合、数组等
-            kryo.addDefaultSerializer(Map.class, new DesensitizingMapSerializer<>(new MapSerializer<>()));
-            kryo.addDefaultSerializer(ConcurrentSkipListMap.class,
-                    new DesensitizingMapSerializer<>(new DefaultSerializers.ConcurrentSkipListMapSerializer()));
-            kryo.addDefaultSerializer(Collections.singletonMap(null, null).getClass(),
-                    new DesensitizingMapSerializer<>(new DefaultSerializers.CollectionsSingletonMapSerializer()));
-            kryo.addDefaultSerializer(TreeMap.class,
-                    new DesensitizingMapSerializer<>(new DefaultSerializers.TreeMapSerializer()));
+            // Map（即映射/字典）类型
+            //kryo.addDefaultSerializer(Map.class, new MapSerializer<>());
+            // Collection（即集合/列表）类型
+            //kryo.addDefaultSerializer(Collection.class, new CollectionSerializer<>());
+            // Array数组类型
+            //kryo.addDefaultSerializer(CharSequence[].class, new DefaultArraySerializers.ObjectArraySerializer(kryo, CharSequence[].class));
 
             return kryo;
         });

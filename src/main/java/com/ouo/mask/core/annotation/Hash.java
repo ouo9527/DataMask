@@ -1,6 +1,5 @@
 package com.ouo.mask.core.annotation;
 
-import com.ouo.mask.core.enums.SceneEnum;
 import lombok.Getter;
 
 import java.lang.annotation.*;
@@ -17,9 +16,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface Hash {
-    // 场景，默认：WEB和LOG
-    SceneEnum scene() default SceneEnum.ALL;
-
     //Hash算法
     AlgorithmEnum algorithm() default AlgorithmEnum.SM3;
 

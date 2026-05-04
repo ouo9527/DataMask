@@ -1,8 +1,5 @@
 package com.ouo.mask.core.annotation;
 
-import com.ouo.mask.core.enums.SceneEnum;
-import com.ouo.mask.core.enums.SensitiveTypeEnum;
-
 import java.lang.annotation.*;
 
 /***********************************************************
@@ -17,9 +14,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface Mask {
-    // 场景，默认：WEB和LOG
-    SceneEnum scene() default SceneEnum.ALL;
-
     // 敏感类型
     SensitiveTypeEnum type();
 

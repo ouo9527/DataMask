@@ -1,4 +1,4 @@
-package com.ouo.mask.core.enums;
+package com.ouo.mask.core.annotation;
 
 /***********************************************************
  * 敏感类型

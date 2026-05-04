@@ -1,12 +1,5 @@
 # 敏感信息无感脱敏
 
-## 脱敏策略
-
-主要作用哪些资源脱敏，以及什么时候可以脱敏等，目前只支持策略如下：
-- packages：脱敏范围即配置包路径（默认是空），多个值时以英文逗号隔开。为了减少不必要的数据脱敏，否则会影响系统性能，因此推荐设置，当为空时会扫描全部类；
-- effectDate：脱敏生效期（默认是无）；
-- expiryDate：脱敏失效期（默认是无）；
-
 ## 脱敏规则
 
 主要作用是哪些字段的数据按照何种规则方式进行脱敏。目前支持5种脱敏方式：置空、哈希、正则、替换、掩盖。针对于掩盖这种脱敏，其内置以下脱敏规则：
@@ -126,26 +119,16 @@ ouo:
   desens:
     #是否开启脱敏，默认true即开启
     enabled: true
-    #脱敏策略
-    strategy:
-      #脱敏范围即配置包路径，多个值时以英文逗号隔开；为了减少不必要的数据脱敏，否则会影响系统性能，因此推荐设置。默认：空，当为空时，会扫描全部类
-      packages: xx.xx,yy.yy
-      #effect-date和expiry-date分别表示脱敏生效期和失效期，使用场景，如：只是某个时间段需要脱敏，而过了这段时间就无需脱敏，此时可以通过这两个属性设置
-      #effect-date:
-      #expiry-date:
     #字段敏规则
     rules:
       #字段名
       field1: #需脱敏字段1
         #脱敏模式：置空empty、哈希hash、正则regex、替换replace、掩盖mask
         mode: mask
-        #脱敏场景：日志log、网页web、全部all，默认all
-        scene: log
         #敏感类型，采用内置脱敏配置
         type: full_name
       field2: #需脱敏字段2
         mode: replace
-        scene: all
         #按位置（从左往右）进行替换
         posns:
           #i表示位置索引
@@ -160,7 +143,6 @@ ouo:
           fixed: false  #表示剩余位置，采用随机值替换  
       field3: #需脱敏字段3
         mode: hash
-        scene: web
         #算法
         algorithm: sm3
         #盐

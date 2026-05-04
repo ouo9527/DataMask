@@ -1,6 +1,6 @@
 package com.ouo.mask.core.rule;
 
-import com.ouo.mask.core.enums.ModeEnum;
+import com.ouo.mask.core.annotation.ModeEnum;
 import lombok.Getter;
 import lombok.Setter;
 

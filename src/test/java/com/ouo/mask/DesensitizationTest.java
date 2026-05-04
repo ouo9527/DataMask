@@ -7,9 +7,8 @@ import cn.hutool.core.lang.Dict;
 import cn.hutool.core.text.StrBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.ouo.mask.core.Desensitizer;
-import com.ouo.mask.core.enums.SceneEnum;
-import com.ouo.mask.semi.StringMapper;
+import com.ouo.mask.core.DesensitizationExecutor;
+import com.ouo.mask.semi.SemiStructuredMapper;
 import com.ouo.mask.util.StrUtil;
 import com.ouo.mask.vo.User;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +37,9 @@ import java.util.*;
 public class DesensitizationTest extends AbstractUnitTest {
 
     @Resource
-    private Desensitizer desensitizer;
+    private DesensitizationExecutor executor;
     @Resource
-    private StringMapper stringMapper;
+    private SemiStructuredMapper semiStructuredMapper;
 
     /**
      * 转驼峰命名测试
@@ -95,7 +94,7 @@ public class DesensitizationTest extends AbstractUnitTest {
         results.add("hello");
         results.add(user);
 
-        log.info("脱敏迭代器：{}", results); // Fastjson不支持直接将iterator序列化，此时会直接输出{}
+        log.info("脱敏迭代器：{}", results.iterator()); // Fastjson不支持直接将iterator序列化，此时会直接输出{}
     }
 
     /**
@@ -161,7 +160,7 @@ public class DesensitizationTest extends AbstractUnitTest {
 
         //System.out.printf("根据配置进行脱敏：%s\n", desensitizer.desensitized(null, new CharSequence[] {"hello", new StrBuilder("李")}));
 
-        System.out.printf("根据配置进行脱敏：%s\n", desensitizer.desensitized(null, u));
+        System.out.printf("根据配置进行脱敏：%s\n", executor.desensitize(u));
 
         User user = new User("");
         user.setName("张王四");
@@ -184,7 +183,7 @@ public class DesensitizationTest extends AbstractUnitTest {
         attach.setCard("532128199510286631");
         user.setAttach(attach);
 
-        System.out.printf("根据注解&配置进行脱敏：%s\n", desensitizer.desensitized(SceneEnum.ALL, user));
+        System.out.printf("根据注解&配置进行脱敏：%s\n", executor.desensitize(user));
 
     }
 
@@ -229,7 +228,7 @@ public class DesensitizationTest extends AbstractUnitTest {
         log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
                 user.getAddr(), user.getName(), user.getPhone(), null);
         log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
-                user.getAddr(), stringMapper.toBean("[\"hello\", \"world!\"]", JsonNode.class), user.getPhone(), null); //Arrays.asList("hello", "world!").iterator()
+                user.getAddr(), semiStructuredMapper.toBean("[\"hello\", \"world!\"]", JsonNode.class), user.getPhone(), null); //Arrays.asList("hello", "world!").iterator()
 
         log.info("日志脱敏格式5(参数含异常对象)：{name} {e}", "hello", new RuntimeException("123"));
     }
