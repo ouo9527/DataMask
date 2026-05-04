@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -18,6 +19,7 @@ import com.ouo.mask.semi.SemiStructuredMapper;
 import com.ouo.mask.util.StrUtil;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 /***********************************************************
@@ -187,11 +189,13 @@ public class JacksonObjectMapper implements SemiStructuredMapper {
      * @return 返回Bean实例
      */
     private <T> T readValueAs(String str, Class<T> valueType) throws IOException {
-        try (FromXmlParser parser = (FromXmlParser) xmlMapper.createParser(str)) {
+        String wrapXml = Map.class.isAssignableFrom(valueType) || JsonNode.class.isAssignableFrom(valueType) ||
+                Object.class.equals(valueType) ? StrUtil.wrapXml(str) : str;
+        try (FromXmlParser parser = (FromXmlParser) this.xmlMapper.createParser(wrapXml)) {
             String rootName = getXmlRoot(parser);
             // 包装XML片段
             if (StrUtil.isBlank(rootName)) {
-                return readValueAs(StrUtil.wrapXml(str), valueType);
+                return this.readValueAs(StrUtil.wrapXml(wrapXml), valueType);
             }
 
             return parser.readValueAs(valueType);

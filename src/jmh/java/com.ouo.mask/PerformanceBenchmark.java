@@ -5,7 +5,6 @@ import com.ouo.mask.config.DesensitizationAutoConfiguration;
 import com.ouo.mask.core.Desensitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;

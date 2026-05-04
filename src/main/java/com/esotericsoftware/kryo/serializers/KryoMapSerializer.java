@@ -29,25 +29,26 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
 
     @Override
     public void write(Kryo kryo, Output output, T object) {
-        delegate.write(kryo, output, object);
+        this.delegate.write(kryo, output, object);
     }
 
     @Override
     public T read(Kryo kryo, Input input, Class<? extends T> type) {
-        return delegate.read(kryo, input, type);
+        return this.delegate.read(kryo, input, type);
     }
 
     @Override
     public T copy(Kryo kryo, T original) {
         if (kryo instanceof KryoDesensitizer) {
-            if (delegate instanceof MapSerializer) {
-                Map copy;
-                if (delegate instanceof ConcurrentSkipListMapSerializer) {
-                    copy = ((ConcurrentSkipListMapSerializer) delegate).createCopy(kryo, (ConcurrentSkipListMap) original);
-                } else if (delegate instanceof TreeMapSerializer) {
-                    copy = ((TreeMapSerializer) delegate).createCopy(kryo, (TreeMap) original);
+            if (this.delegate instanceof MapSerializer) {
+                Map copy = null;
+                if (this.delegate instanceof ConcurrentSkipListMapSerializer) {
+                    copy = ((ConcurrentSkipListMapSerializer) this.delegate).createCopy(kryo,
+                            (ConcurrentSkipListMap) original);
+                } else if (this.delegate instanceof TreeMapSerializer) {
+                    copy = ((TreeMapSerializer) this.delegate).createCopy(kryo, (TreeMap) original);
                 } else {
-                    copy = ((MapSerializer<T>) delegate).createCopy(kryo, original);
+                    copy = ((MapSerializer<T>) this.delegate).createCopy(kryo, original);
                 }
 
                 //kryo.reference(copy);
@@ -56,7 +57,7 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
                     copy.put(entry.getKey(), entry.getValue());
                 }
                 return (T) copy;
-            } else if (delegate instanceof CollectionsSingletonMapSerializer) {
+            } else if (this.delegate instanceof CollectionsSingletonMapSerializer) {
                 Map.Entry<?, ?> entry = this.desensitize((KryoDesensitizer) kryo, (Map.Entry) original.entrySet()
                         .iterator().next());
 
@@ -64,7 +65,7 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
             }
         }
 
-        return delegate.copy(kryo, original);
+        return this.delegate.copy(kryo, original);
     }
 
     /**
@@ -78,10 +79,10 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
         Object key = entry.getKey();
 
         if (key instanceof String) return MapUtil.builder().put(key, kryo.desensitize(entry.getValue(),
-                DesensitizationContext.builder(context).fieldName((String) key).build()))
+                DesensitizationContext.builder(this.context).fieldName((String) key).build()))
                 .build().entrySet().iterator().next();
 
-        return MapUtil.builder().put(kryo.desensitize(key, context), kryo.desensitize(entry.getValue(),
-                context)).build().entrySet().iterator().next();
+        return MapUtil.builder().put(kryo.desensitize(key, this.context), kryo.desensitize(entry.getValue(),
+                this.context)).build().entrySet().iterator().next();
     }
 }

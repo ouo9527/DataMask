@@ -53,8 +53,8 @@ public interface LogDesensitizationParser {
             return evaluator.exe(template, String.class, SpelEvaluationContext.builder().args(args).build(),
                     (expression, context, result, e) -> {
                         Object val = null;  // 脱敏后值
-                // 空表达式
                 int index = expression.getPlaceholderIndex();
+                        // 空表达式
                         if (StrUtil.isBlank(expression.getExpressionString())) {
                             val = index >= args.length ? "{}" : null == executor ? args[index] : executor.desensitize(args[index]);
                         } else {
@@ -119,9 +119,8 @@ public interface LogDesensitizationParser {
                                     }
                                 }
 
-                                val = null == field ? executor.desensitize(propVal, DesensitizationContext.builder()
-                                        .fieldName(propName).build()) : executor.desensitize(propVal, DesensitizationContext
-                                        .builder().fieldName(propName).build());
+                                val = executor.desensitize(propVal, DesensitizationContext.builder().fieldName(propName)
+                                        .field(field).build());
                             }
                         }
 

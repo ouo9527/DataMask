@@ -4,6 +4,7 @@ import cn.hutool.core.map.MapUtil;
 import com.ouo.mask.core.DesensitizationContext;
 import com.ouo.mask.core.DesensitizationExecutor;
 import com.ouo.mask.core.annotation.*;
+import com.ouo.mask.core.rule.DesensitizationProperties;
 import com.ouo.mask.core.rule.DesensitizationRule;
 import com.ouo.mask.util.DesensitizedUtil;
 import com.ouo.mask.util.StrUtil;
@@ -23,6 +24,8 @@ public class StringDesensitizer implements Desensitizer<String> {
     private final DesensitizationExecutor executor;
     // 半结构化脱敏器
     private final SemiStructuredDesensitizer<String> desensitizer;
+    // 全局脱敏规则
+    private final DesensitizationProperties properties;
 
     @Override
     public DesensitizationExecutor getDesensitizationExecutor() {
@@ -55,7 +58,7 @@ public class StringDesensitizer implements Desensitizer<String> {
                     context.getFieldName(), data);
         // 根据配置中全局脱敏规则进行脱敏
         Map<String, DesensitizationRule> rules = null;
-        if (null == context.getProperties() || MapUtil.isEmpty(rules = context.getProperties().getRules()))
+        if (null == this.properties || MapUtil.isEmpty(rules = this.properties.getRules()))
             return data;
         // 基于全局且按命名方式匹配脱敏
         String fieldName = StrUtil.toCamelCase2(context.getFieldName());

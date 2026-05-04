@@ -20,6 +20,6 @@ public class JacksonSerializer<T> extends JsonSerializer<T> {
 
     @Override
     public void serialize(T value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-        delegate.serialize(value, new JacksonGenerator(gen, provider), provider);
+        this.delegate.serialize(value, new JacksonGenerator(gen, provider), provider);
     }
 }

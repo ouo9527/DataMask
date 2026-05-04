@@ -25,40 +25,42 @@ public final class KryoCollectionSerializer<T extends Collection> extends Serial
 
     @Override
     public void write(Kryo kryo, Output output, T object) {
-        delegate.write(kryo, output, object);
+        this.delegate.write(kryo, output, object);
     }
 
     @Override
     public T read(Kryo kryo, Input input, Class<? extends T> type) {
-        return delegate.read(kryo, input, type);
+        return this.delegate.read(kryo, input, type);
     }
 
     @Override
     public T copy(Kryo kryo, T original) {
         if (kryo instanceof KryoDesensitizer) {
-            if (delegate instanceof CollectionSerializer) {
-                Collection copy;
-                if (delegate instanceof ArraysAsListSerializer) {
+            if (this.delegate instanceof CollectionSerializer) {
+                Collection copy = null;
+                if (this.delegate instanceof ArraysAsListSerializer) {
                     copy = new ArrayList<>(original.size()); //Arrays.asList( new Object[original.size()]);
-                } else if (delegate instanceof TreeSetSerializer) {
-                    copy = ((TreeSetSerializer) delegate).createCopy(kryo, (TreeSet) original);
+                } else if (this.delegate instanceof TreeSetSerializer) {
+                    copy = ((TreeSetSerializer) this.delegate).createCopy(kryo, (TreeSet) original);
                 } else {
-                    copy = ((CollectionSerializer) delegate).createCopy(kryo, original);
+                    copy = ((CollectionSerializer) this.delegate).createCopy(kryo, original);
                 }
 
                 kryo.reference(copy);
 
                 for (Object element : original)
-                    copy.add(((KryoDesensitizer) kryo).desensitize(element, context));
+                    copy.add(((KryoDesensitizer) kryo).desensitize(element, this.context));
 
                 return (T) copy;
-            } else if (delegate instanceof CollectionsSingletonListSerializer) {
-                return (T) Collections.singletonList(((KryoDesensitizer) kryo).desensitize(((List) original).get(0), context));
-            } else if (delegate instanceof CollectionsSingletonSetSerializer) {
-                return (T) Collections.singleton(((KryoDesensitizer) kryo).desensitize(original.iterator().next(), context));
+            } else if (this.delegate instanceof CollectionsSingletonListSerializer) {
+                return (T) Collections.singletonList(((KryoDesensitizer) kryo).desensitize(((List) original).get(0),
+                        this.context));
+            } else if (this.delegate instanceof CollectionsSingletonSetSerializer) {
+                return (T) Collections.singleton(((KryoDesensitizer) kryo).desensitize(original.iterator().next(),
+                        this.context));
             }
         }
 
-        return delegate.copy(kryo, original);
+        return this.delegate.copy(kryo, original);
     }
 }

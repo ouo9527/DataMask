@@ -27,10 +27,10 @@ public class JacksonGenerator extends JsonGeneratorDelegate {
 
     @Override
     public void writeString(String text) throws IOException {
-        final DesensitizationExecutor executor = (DesensitizationExecutor) provider.getAttribute(
+        final DesensitizationExecutor executor = (DesensitizationExecutor) this.provider.getAttribute(
                 DesensitizationExecutor.class); // 字符串脱敏器
         if (null != executor) {
-            final DesensitizationContext context = (DesensitizationContext) provider.getAttribute(
+            final DesensitizationContext context = (DesensitizationContext) this.provider.getAttribute(
                     DesensitizationContext.class); // 脱敏上下文
 
             // gen.getCurrentValue()：获取当前序列化对象

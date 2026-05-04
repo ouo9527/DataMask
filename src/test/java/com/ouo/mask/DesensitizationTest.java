@@ -39,7 +39,7 @@ public class DesensitizationTest extends AbstractUnitTest {
     @Resource
     private DesensitizationExecutor executor;
     @Resource
-    private SemiStructuredMapper semiStructuredMapper;
+    private SemiStructuredMapper mapper;
 
     /**
      * 转驼峰命名测试
@@ -83,18 +83,33 @@ public class DesensitizationTest extends AbstractUnitTest {
     }
 
     /**
-     * 脱敏迭代器
+     * 脱敏多次迭代器
      */
     @Test
-    public void desensitizedIterator() {
-        // 迭代器转json
-        final List results = new ArrayList<>();
+    public void desensitizedIterable() {
+        final Set results = new HashSet();
         User user = new User("");
         user.setName("张王四");
         results.add("hello");
         results.add(user);
+        log.info("脱敏可多次迭代器1：{}", results); // 通过Kryo脱敏处理
 
-        log.info("脱敏迭代器：{}", results.iterator()); // Fastjson不支持直接将iterator序列化，此时会直接输出{}
+        JsonNode jsonNode = mapper.toBean("<text><![CDATA[<name>张二狗蛋儿</name>]]></text><phone>17722657194</phone>",
+                JsonNode.class); // 通过Jackson脱敏处理
+        log.info("脱敏可多次迭代器2：{}", jsonNode);
+    }
+
+    /**
+     * 脱敏一次性迭代器
+     */
+    @Test
+    public void desensitizedIterator() {
+        final Set results = new HashSet();
+        User user = new User("");
+        user.setName("张王四");
+        results.add("hello");
+        results.add(user);
+        log.info("脱敏一次性迭代器：{}", results.iterator()); // Fastjson不支持直接将iterator序列化，此时会直接输出{}，Jackson也不支持
     }
 
     /**
@@ -113,7 +128,8 @@ public class DesensitizationTest extends AbstractUnitTest {
         //builder.newDocument(); // 全新空白文档
         Document doc = builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 
-        log.info("脱敏Dom对象：{}", doc); // desensitizer.desensitized(SceneEnum.LOG, doc)
+        log.info("脱敏Dom对象：{student}", doc); // executor.desensitize(doc)
+        log.info("脱敏Dom对象：{}", doc);
     }
 
     /**
@@ -135,7 +151,6 @@ public class DesensitizationTest extends AbstractUnitTest {
         log.info("脱敏JSON数组字符串：{}", str);
         log.info("脱敏JSON数组字符串：{phone}", str);
     }
-
 
     /**
      * 脱敏测试
@@ -215,7 +230,7 @@ public class DesensitizationTest extends AbstractUnitTest {
         attach.setCard("532128199510286631");
         user.setAttach(attach);
         // 全部会脱敏
-        log.info("日志脱敏格式1(只含一个参数，多个占位符或占位符spel表达式)：无表达式={}、符合规范spel模板表达式={name}、符合规范spel表达式1={#p0.phone}、符合规范spel表达式2={#a0.bankCard}",
+        log.info("日志脱敏格式1(只含一个参数，多个占位符或占位符spel表达式)：无表达式={}、不符合规范spel模板表达式取值={name}、符合规范spel表达式1={#p0.phone}、符合规范spel表达式2={#a0.bankCard}",
                 user);
         // 全部会脱敏
         log.info("日志脱敏表达式2(多个参数，多个占位符或占位符spel表达式)：用户名={name}、{acctName}、电话号码={#p0.phone}，{}",
@@ -227,8 +242,8 @@ public class DesensitizationTest extends AbstractUnitTest {
         // 无占位符不会脱敏
         log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
                 user.getAddr(), user.getName(), user.getPhone(), null);
-        log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{}、用户名={name}、电话号码={Phone}、{}、{}",
-                user.getAddr(), semiStructuredMapper.toBean("[\"hello\", \"world!\"]", JsonNode.class), user.getPhone(), null); //Arrays.asList("hello", "world!").iterator()
+        log.info("日志脱敏格式4(只含占位符即不含占位符spel表达式，参数个数小于有效占位符)：{addr}、用户名={name}、电话号码={Phone}、{}、{}",
+                user.getAddr(), mapper.toBean("[\"hello\", \"world!\"]", JsonNode.class), user.getPhone(), null); //Arrays.asList("hello", "world!").iterator()
 
         log.info("日志脱敏格式5(参数含异常对象)：{name} {e}", "hello", new RuntimeException("123"));
     }

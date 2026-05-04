@@ -37,12 +37,7 @@ public class JacksonDesensitizer<T> extends SemiStructuredDesensitizer<T> {
                     JsonMapper jsonMapper = this.mapper.getMapper(SemiStructType.JSON);
                     return (T) this.toString(jsonMapper.readValue((String) data, Object.class), jsonMapper, context);
                 } else if (StrUtil.isTypeXml((CharSequence) data)) {
-                    XmlMapper xmlMapper = this.mapper.getMapper(SemiStructType.XML);
-                    try (FromXmlParser parser = (FromXmlParser) xmlMapper.createParser((String) data)) {
-                        // 获取xml字符串根节点xmlParser.getParsingContext().inObject()
-                        return (T) this.toString(parser.readValueAs(Object.class), xmlMapper, DesensitizationContext
-                                .builder(context).fieldName(JacksonObjectMapper.getXmlRoot(parser)).build());
-                    }
+                    return (T) this.transform((String) data, this.mapper.getMapper(SemiStructType.XML), context);
                 } else throw new DesensitizeException("Only JSON and XML data are supported for desensitization; " +
                         "other structured data types are not supported.");
             }
@@ -51,6 +46,38 @@ public class JacksonDesensitizer<T> extends SemiStructuredDesensitizer<T> {
                     SemiStructType.JSON), context), data.getClass());
         } catch (IOException e) {
             throw new DesensitizeException("JSON and XML string desensitization failed: ", e);
+        }
+    }
+
+    /**
+     * 转换XML字符串
+     *
+     * @param xml     XML字符串
+     * @param context 脱敏上下文
+     * @return 返回转换后XML字符串
+     */
+    private String transform(String xml, XmlMapper xmlMapper, DesensitizationContext context) throws IOException {
+        String wrapXml = StrUtil.wrapXml(xml);
+        try (FromXmlParser parser = (FromXmlParser) xmlMapper.createParser(wrapXml)) {
+            // 获取xml字符串根节点xmlParser.getParsingContext().inObject()
+            String rootName = JacksonObjectMapper.getXmlRoot(parser);
+            // 包装XML片段
+            if (StrUtil.isBlank(rootName)) {
+                return this.transform(StrUtil.wrapXml(wrapXml), xmlMapper, context);
+            }
+
+            String val = this.toString(parser.readValueAsTree(), xmlMapper, DesensitizationContext
+                    .builder(context)
+                    .fieldName(rootName)
+                    .build());
+
+            // 移除XML片段包装(不换行)
+            if (StrUtil.DEFAULT_ROOT_NAME.equals(rootName)) {
+                return StrUtil.strip(val, StrUtil.DEFAULT_START_ROOT_NODE,
+                        StrUtil.DEFAULT_END_ROOT_NODE);
+            }
+
+            return val;
         }
     }
 
@@ -71,7 +98,7 @@ public class JacksonDesensitizer<T> extends SemiStructuredDesensitizer<T> {
                         .put(DesensitizationExecutor.class, this.executor)
                         .put(DesensitizationContext.class, context)
                         .build())
-                .withRootName(context.getFieldName())
+                .withRootName(objectMapper instanceof XmlMapper ? context.getFieldName() : null)
                 .writeValueAsString(obj);
     }
 }

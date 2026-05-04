@@ -38,21 +38,21 @@ public final class KryoFieldSerializer<T> extends Serializer<T> {
 
     @Override
     public void write(Kryo kryo, Output output, T object) {
-        delegate.write(kryo, output, object);
+        this.delegate.write(kryo, output, object);
     }
 
     @Override
     public T read(Kryo kryo, Input input, Class<? extends T> type) {
-        return delegate.read(kryo, input, type);
+        return this.delegate.read(kryo, input, type);
     }
 
     @Override
     public T copy(Kryo kryo, T original) {
-        if (kryo instanceof KryoDesensitizer && delegate instanceof FieldSerializer) {
-            T copy = ((FieldSerializer<T>) delegate).createCopy(kryo, original);
+        if (kryo instanceof KryoDesensitizer && this.delegate instanceof FieldSerializer) {
+            T copy = ((FieldSerializer<T>) this.delegate).createCopy(kryo, original);
             kryo.reference(copy);
 
-            FieldSerializer.CachedField[] cachedFields = ((FieldSerializer<T>) delegate).getCopyFields();
+            FieldSerializer.CachedField[] cachedFields = ((FieldSerializer<T>) this.delegate).getCopyFields();
             for (FieldSerializer.CachedField cachedField : cachedFields) {
                 if (cachedField instanceof UnsafeField) {
                     this.desensitize((UnsafeField) cachedField, original, copy);
@@ -68,7 +68,7 @@ public final class KryoFieldSerializer<T> extends Serializer<T> {
             return copy;
         }
 
-        return delegate.copy(kryo, original);
+        return this.delegate.copy(kryo, original);
     }
 
     /**
@@ -79,7 +79,7 @@ public final class KryoFieldSerializer<T> extends Serializer<T> {
      * @param dest        脱敏后数据
      */
     private <F extends ReflectField> void desensitize(F cachedField, T src, T dest) {
-        FieldSerializer<T> serializer = ((FieldSerializer<T>) cachedField.getSerializer());
+        FieldSerializer<T> serializer = ((FieldSerializer<T>) this.delegate);
         KryoDesensitizer kryo = (KryoDesensitizer<?>) serializer.getKryo();
         try {
             cachedField.set(dest, kryo.desensitize(cachedField.get(src), DesensitizationContext

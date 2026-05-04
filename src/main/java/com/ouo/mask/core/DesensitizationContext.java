@@ -3,7 +3,6 @@ package com.ouo.mask.core;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.ouo.mask.core.annotation.*;
-import com.ouo.mask.core.rule.DesensitizationProperties;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -22,15 +21,12 @@ import java.util.Arrays;
 public class DesensitizationContext {
     private final String fieldName; // 当前脱敏字段/属性名称
     private final Annotation annotation; // 当前脱敏字段脱敏注解规则
-    // 全局脱敏配置
-    private final DesensitizationProperties properties;
 
     //private DesensitizationContext parent;
 
-    DesensitizationContext(String fieldName, Annotation annotation, DesensitizationProperties properties, DesensitizationContext parent) {
+    DesensitizationContext(String fieldName, Annotation annotation, DesensitizationContext parent) {
         this.fieldName = StrUtil.blankToDefault(fieldName, null == parent ? null : parent.getFieldName());
         this.annotation = ObjUtil.defaultIfNull(annotation, (null == parent ? null : parent.getAnnotation()));
-        this.properties = ObjUtil.defaultIfNull(properties, null == parent ? null : parent.getProperties());
         //this.parent = parent;
     }
 
@@ -45,7 +41,6 @@ public class DesensitizationContext {
     public static class Builder {
         private String fieldName;
         private Annotation annotation;
-        private DesensitizationProperties properties;
         private DesensitizationContext parent;
 
         Builder() {
@@ -68,7 +63,7 @@ public class DesensitizationContext {
         }
 
         public DesensitizationContext build() {
-            return new DesensitizationContext(this.fieldName, this.annotation, this.properties, this.parent);
+            return new DesensitizationContext(this.fieldName, this.annotation, this.parent);
         }
     }
 }
