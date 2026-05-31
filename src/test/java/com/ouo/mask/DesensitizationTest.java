@@ -14,11 +14,11 @@ import com.ouo.mask.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.slf4j.helpers.MessageFormatter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.annotation.Resource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -34,18 +34,18 @@ import java.util.*;
  * Date:     2026/4/5
  ***********************************************************/
 @Slf4j
-public class DesensitizationTest extends AbstractUnitTest {
+class DesensitizationTest extends AbstractUnitTest {
 
-    @Resource
+    @Autowired
     private DesensitizationExecutor executor;
-    @Resource
+    @Autowired
     private SemiStructuredMapper mapper;
 
     /**
      * 转驼峰命名测试
      */
     @Test
-    public void toCamelCase() {
+    void toCamelCase() {
         log.info("蛇形命名（Snake Case）-> 驼峰命名案列1：{}", StrUtil.toCamelCase2("user_login_count"));
         log.info("蛇形命名（Snake Case）-> 驼峰命名案列2：{}", StrUtil.toCamelCase2("User_login_count"));
         log.info("蛇形命名（Snake Case）-> 驼峰命名案列3：{}", StrUtil.toCamelCase2("user_Login_count"));
@@ -62,11 +62,9 @@ public class DesensitizationTest extends AbstractUnitTest {
 
     /**
      * 配置加载测试
-     *
-     * @throws IOException
      */
     @Test
-    public void properties() throws IOException {
+    void properties() throws IOException {
         //仅有单层的Map
         Properties properties = new Properties();
         properties.load(new ClassPathResource("application.properties").getInputStream());
@@ -86,8 +84,8 @@ public class DesensitizationTest extends AbstractUnitTest {
      * 脱敏多次迭代器
      */
     @Test
-    public void desensitizedIterable() {
-        final Set results = new HashSet();
+    void desensitizedIterable() {
+        final Set<Object> results = new HashSet<>();
         User user = new User("");
         user.setName("张王四");
         results.add("hello");
@@ -103,8 +101,8 @@ public class DesensitizationTest extends AbstractUnitTest {
      * 脱敏一次性迭代器
      */
     @Test
-    public void desensitizedIterator() {
-        final Set results = new HashSet();
+    void desensitizedIterator() {
+        final Set <Object>results = new HashSet<>();
         User user = new User("");
         user.setName("张王四");
         results.add("hello");
@@ -114,13 +112,9 @@ public class DesensitizationTest extends AbstractUnitTest {
 
     /**
      * 脱敏Dom对象
-     *
-     * @throws IOException
-     * @throws ParserConfigurationException
-     * @throws SAXException
      */
     @Test
-    public void desensitizedDom() throws IOException, ParserConfigurationException, SAXException {
+    void desensitizedDom() throws IOException, ParserConfigurationException, SAXException {
         String xml = "<student> <text><![CDATA[<name>张三丰</name>]]></text> <phones><phone>17722657194</phone><phone>18822657194</phone></phones><class><val>&lt;name>数学&lt;/name></val></class></student>";
         // 创建空Document对象
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -136,7 +130,7 @@ public class DesensitizationTest extends AbstractUnitTest {
      * 脱敏json/xml字符串测试
      */
     @Test
-    public void desensitizedStr() {
+    void desensitizedStr() {
         //DocumentBuilderFactory.newInstance().newDocumentBuilder().parse()
         String str = "<text><![CDATA[<name>张二狗蛋儿</name>]]></text><phone>17722657194</phone>";
         // {text}或{[text]}
@@ -154,12 +148,9 @@ public class DesensitizationTest extends AbstractUnitTest {
 
     /**
      * 脱敏测试
-     *
-     * @throws JsonProcessingException
      */
     @Test
-    public void desensitized() {
-
+    void desensitized() {
         Map<String, Object> data = new HashMap<>();
         data.put("PhonE", "17722657194");
         data.put("name", "[\"张三丰\",2]");
@@ -199,14 +190,13 @@ public class DesensitizationTest extends AbstractUnitTest {
         user.setAttach(attach);
 
         System.out.printf("根据注解&配置进行脱敏：%s\n", executor.desensitize(user));
-
     }
 
     /**
      * 日志脱敏
      */
     @Test
-    public void desensitizedLog() {
+    void desensitizedLog() {
         String template = "转义占位符：\\{}，占位符1：{'}，占位符2：{name}，占位符3：{ }，占位符4：{}，占位符5：\\\\{}、占位符7：{、占位符8：}\"，占位符9：\\{}、占位符10：{\\}"; //占位符6：{、
         Object[] args = new Object[]{"hello", "world", "张思", null};
         log.info(template, args);

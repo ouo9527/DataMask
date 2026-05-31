@@ -32,16 +32,10 @@ import java.util.Optional;
 @AutoConfiguration
 @ConditionalOnProperty(prefix = DesensitizationProperties.PREFIX, name = "enabled", havingValue = "true", matchIfMissing = true)
 @Import({SpringUtil.class, DesensitizationResponseBodyAdvice.class})
-//@EnableConfigurationProperties({DesensitizationProperties.class})
+//@EnableConfigurationProperties//({DesensitizationProperties.class})
 //@RefreshScope //springcloud刷新@Value注解属性
 @Slf4j
 public class DesensitizationAutoConfiguration {
-
-    /*@Bean
-    @ConditionalOnMissingBean
-    public DesensitizationBeanFactoryPostProcessor desensitizationBeanFactoryPostProcessor() {
-        return new DesensitizationBeanFactoryPostProcessor();
-    }*/
 
     @Bean
     @ConfigurationProperties(DesensitizationProperties.PREFIX)

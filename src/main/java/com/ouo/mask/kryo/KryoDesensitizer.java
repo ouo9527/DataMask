@@ -61,6 +61,7 @@ public class KryoDesensitizer<T> extends Kryo implements Desensitizer<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T desensitize(T data, DesensitizationContext context) {
         // Iterator一次性迭代器类型（游标/指针迭代）
         boolean isIterator = false;
@@ -72,7 +73,7 @@ public class KryoDesensitizer<T> extends Kryo implements Desensitizer<T> {
             obj = IterUtil.toList((Iterator<?>) data);
         } else obj = data;
 
-        Serializer serializer = this.getSerializer(ClassUtil.getClass(obj), context); //  this.getSerializer(ClassUtil.getClass(obj))
+        Serializer serializer = this.getSerializer(ClassUtil.getClass(obj), context);
         Object cp = this.copy(obj, serializer);
 
         return (T) (isIterator ? IterUtil.getIter(cp) : cp);
@@ -84,25 +85,23 @@ public class KryoDesensitizer<T> extends Kryo implements Desensitizer<T> {
      * @see #getRegistration(Class)
      * @see Registration#getSerializer()
      */
+    @SuppressWarnings("unchecked")
     private Serializer getSerializer(Class type, DesensitizationContext context) {
-        Serializer delegate = null;
-        if (null != type) {
-            delegate = getRegistration(type).getSerializer();
-            if (delegate instanceof FieldSerializer) {
-                return new KryoFieldSerializer<T>(delegate, context);
-            } else if (delegate instanceof DefaultArraySerializers.StringArraySerializer
-                    || delegate instanceof DefaultArraySerializers.ObjectArraySerializer) {
-                return new KryoArraySerializer<T>(delegate, context);
-            } else if (delegate instanceof CollectionSerializer
-                    || delegate instanceof DefaultSerializers.CollectionsSingletonListSerializer
-                    || delegate instanceof DefaultSerializers.CollectionsSingletonSetSerializer) {
-                return new KryoCollectionSerializer<>(delegate, context);
-            } else if (delegate instanceof MapSerializer
-                    || delegate instanceof DefaultSerializers.CollectionsSingletonMapSerializer) {
-                return new KryoMapSerializer<>(delegate, context);
-            }
+        if (null == type) return null;
+        Serializer delegate = getRegistration(type).getSerializer();
+        if (delegate instanceof FieldSerializer)
+            return new KryoFieldSerializer<T>(delegate, context);
+        if (delegate instanceof DefaultArraySerializers.StringArraySerializer
+                || delegate instanceof DefaultArraySerializers.ObjectArraySerializer)
+            return new KryoArraySerializer<T>(delegate, context);
+        if (delegate instanceof CollectionSerializer
+                || delegate instanceof DefaultSerializers.CollectionsSingletonListSerializer
+                || delegate instanceof DefaultSerializers.CollectionsSingletonSetSerializer)
+            return new KryoCollectionSerializer<>(delegate, context);
+        if (delegate instanceof MapSerializer
+                || delegate instanceof DefaultSerializers.CollectionsSingletonMapSerializer)
+            return new KryoMapSerializer<>(delegate, context);
 
-        }
         return delegate;
     }
 }

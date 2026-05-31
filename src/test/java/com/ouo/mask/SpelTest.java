@@ -27,8 +27,7 @@ import java.util.Map;
  * Date:     2026/4/5
  ***********************************************************/
 @Slf4j
-public class SpelTest {
-
+class SpelTest {
     // json处理器
     private ObjectMapper objectMapper;
     // xml处理器
@@ -44,18 +43,18 @@ public class SpelTest {
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // 反序列化时，自动忽略未知字段即不存在于目标类中的字段
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // 序列化时，是否对无属性的空对象抛异常
                 //.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
+                .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
                 .registerModules(blackbirdModule);
 
         this.xmlMapper
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) // 反序列化时，自动忽略未知字段即不存在于目标类中的字段
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false) // 序列化时，是否对无属性的空对象抛异常
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
+                .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
                 .registerModules(blackbirdModule);
     }
 
     @Test
-    public void spel() throws JsonProcessingException {
+    void spel() throws JsonProcessingException {
         User user = new User();
         user.setName("李四");
         user.setAddr(new String[]{"深圳"});

@@ -26,7 +26,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @ControllerAdvice
 @Slf4j
 public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Object> {
-
     @Autowired(required = false)
     private DesensitizationExecutor desensitizationExecutor;
     @Autowired(required = false)
@@ -34,8 +33,7 @@ public class DesensitizationResponseBodyAdvice implements ResponseBodyAdvice<Obj
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        if (null != desensitizationExecutor && null != returnType
-                && !Void.TYPE.equals(returnType.getMethod().getReturnType())) {
+        if (null != desensitizationExecutor && !Void.TYPE.equals(returnType.getMethod().getReturnType())) {
             Boolean enabled = AnnotationUtil.getAnnotationValue(returnType.getMethod(), Desensitize.class,
                     "enabled");
             return null == enabled || enabled;

@@ -16,7 +16,8 @@ import java.io.IOException;
 /**/
 @RequiredArgsConstructor
 public class JacksonSerializer<T> extends JsonSerializer<T> {
-    protected final JsonSerializer<T> delegate; // 当前委派序例化器
+    // 当前委派序例化器
+    protected final JsonSerializer<T> delegate;
 
     @Override
     public void serialize(T value, JsonGenerator gen, SerializerProvider provider) throws IOException {

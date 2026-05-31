@@ -38,6 +38,7 @@ import java.util.*;
 @Slf4j
 @Setter
 @Getter
+//@ConfigurationProperties(DesensitizationProperties.PREFIX)
 public class DesensitizationProperties {
     public static final String PREFIX = "ouo.desens";
     public static final String RULES = PREFIX + ".rules";
@@ -63,7 +64,7 @@ public class DesensitizationProperties {
      *
      * @param field 待脱敏字段
      * @param rule  字段脱敏规则
-     * @return
+     * @return 返回脱敏规则
      */
     private DesensitizationRule convert(String field, Map rule) {
         DesensitizationRule dr = null;

@@ -28,12 +28,12 @@ import java.util.Map;
  * Date:     2026/4/5
  ***********************************************************/
 @Slf4j
-public class OrikaTest {
+class OrikaTest {
     private MapperFactory mapperFactory;
     private Class<?> clzz;
 
     @BeforeEach
-    public void init() throws CannotCompileException, NotFoundException {
+    void init() throws CannotCompileException, NotFoundException {
         System.setProperty("orika.bytecode.providers.default", "no-cache");
         ClassPool pool = ClassPool.getDefault();
         pool.clearImportedPackages();
@@ -86,7 +86,7 @@ public class OrikaTest {
     }
 
     @Test
-    public void mapping() {
+    void mapping() {
         User user = new User();
         user.setName("李四");
         user.setAddr(new String[]{"深圳"});
@@ -103,7 +103,7 @@ public class OrikaTest {
                 .byDefault()
                 .register();*/
         List<Object> list = new ArrayList<>();
-        Map map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("name", "李四");
         map.put("age", 18);
 
@@ -116,16 +116,16 @@ public class OrikaTest {
         list.add(user);
 
         //mapperFactory.classMap(Map.class, Map.class).byDefault().register();
-        Map toUser = mapperFactory.getMapperFacade()
-                .mapAsMap(map, new TypeBuilder<Map<Object, Object>>() {
+        Map<String, Object> toUser = mapperFactory.getMapperFacade()
+                .mapAsMap(map, new TypeBuilder<Map<String, Object>>() {
                         }.build()
-                        , new TypeBuilder<Map<Object, Object>>() {
+                        , new TypeBuilder<Map<String, Object>>() {
                         }.build());
         /*User toUser = mapperFactory.getMapperFacade()
                 .map(user, User.class);*/
         log.info("列表映射结果：{}", toUser);
 
-        List toList = mapperFactory.getMapperFacade().mapAsList(list, Object.class);
+        List<?> toList = mapperFactory.getMapperFacade().mapAsList(list, Object.class);
         log.info("集合映射结果：{}", toList);
     }
 }

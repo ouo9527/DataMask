@@ -111,7 +111,7 @@ public class JacksonObjectMapper implements SemiStructuredMapper {
                 .enable(SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL) // 自引用设置为null，但需要搭配@JsonIdentityInfo注解使用
                 .enable(SerializationFeature.USE_EQUALITY_FOR_OBJECT_ID) // 启用引用标识处理(利用对象相等性判断，但非内存地址)，但需要搭配@JsonIdentityInfo注解使用，自动用 "@id" 和 "@ref" 标记重复对象，
                 //.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
+                .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
                 .registerModules(blackbirdModule, simpleModule);
 
         this.xmlMapper = (XmlMapper) xmlMapperOptional
@@ -122,7 +122,7 @@ public class JacksonObjectMapper implements SemiStructuredMapper {
                 .enable(SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL) // 自引用设置为null，但需要搭配@JsonIdentityInfo注解使用
                 .enable(SerializationFeature.USE_EQUALITY_FOR_OBJECT_ID) // 启用引用标识处理(利用对象相等性判断，但非内存地址)，但需要搭配@JsonIdentityInfo注解使用，自动用 "@id" 和 "@ref" 标记重复对象，
                 //.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
+                .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL) // 序列化时，自动忽略 null 值字段
                 .registerModules(blackbirdModule, simpleModule);
 
     }
@@ -176,9 +176,10 @@ public class JacksonObjectMapper implements SemiStructuredMapper {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getMapper(SemiStructType type) {
-        return (T) (SemiStructType.JSON.equals(type) ? this.jsonMapper : SemiStructType.XML.equals(type)
-                ? this.xmlMapper : null);
+        if (SemiStructType.JSON.equals(type)) return (T) this.jsonMapper;
+        return (T) (SemiStructType.XML.equals(type) ? this.xmlMapper : null);
     }
 
     /**

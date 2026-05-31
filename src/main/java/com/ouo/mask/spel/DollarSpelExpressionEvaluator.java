@@ -10,7 +10,8 @@ import org.springframework.expression.common.TemplateParserContext;
  * Date:     2024/11/28
  ***********************************************************/
 public class DollarSpelExpressionEvaluator extends SpelExpressionEvaluator {
-    private TemplateParserContext parserContext = new TemplateParserContext("${", "}");
+    // 模板表达式解析上下文
+    private final TemplateParserContext parserContext = new TemplateParserContext("${", "}");
 
     @Override
     public ParserContext getParserContext() {

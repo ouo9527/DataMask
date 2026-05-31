@@ -10,18 +10,21 @@ import java.util.regex.Pattern;
  * Author:   ouo
  * Date:     2024/11/28
  ***********************************************************/
-public class PassportUtil {
+public final class PassportUtil {
 
-    public final static Pattern E_PASSPORT = Pattern.compile("^(1[45]|E[A-Z])\\d{7}$|^[E|G]\\d{8}$"); //普通电子护照
-    public final static Pattern S_PASSPORT = Pattern.compile("^S\\d{7,8}$|^SE\\d{7}$"); //务电子护照
-    public final static Pattern D_PASSPORT = Pattern.compile("^D\\d{8}$|^DE\\d{7}$"); //外交护照
-    public final static Pattern P_PASSPORT = Pattern.compile("^P\\d{8}$|^PE\\d{7}$"); //因公普通护照
+    public static final Pattern E_PASSPORT = Pattern.compile("^(1[45]|E[A-Z])\\d{7}$|^[E|G]\\d{8}$"); //普通电子护照
+    public static final Pattern S_PASSPORT = Pattern.compile("^S\\d{7,8}$|^SE\\d{7}$"); //务电子护照
+    public static final Pattern D_PASSPORT = Pattern.compile("^D\\d{8}$|^DE\\d{7}$"); //外交护照
+    public static final Pattern P_PASSPORT = Pattern.compile("^P\\d{8}$|^PE\\d{7}$"); //因公普通护照
 
-    public final static Pattern C_PASSPORT = Pattern.compile("^[W|C]\\d{8}$|^C[A-Z]\\d{7}$"); //大陆往来港澳通行证
-    public final static Pattern L_PASSPORT = Pattern.compile("^[T|L]\\d{8}$"); //大陆往来台湾通行证
-    public final static Pattern H_PASSPORT = Pattern.compile("^[K|H]\\d{8}$"); //香港回乡通行证
-    public final static Pattern M_PASSPORT = Pattern.compile("^[M]\\d{8}$"); //澳门回乡通行证
-    public final static Pattern TW_PASSPORT = Pattern.compile("^\\d{8}$|^\\d{10}$|^\\d{18}$"); //台湾台胞证
+    public static final Pattern C_PASSPORT = Pattern.compile("^[W|C]\\d{8}$|^C[A-Z]\\d{7}$"); //大陆往来港澳通行证
+    public static final Pattern L_PASSPORT = Pattern.compile("^[T|L]\\d{8}$"); //大陆往来台湾通行证
+    public static final Pattern H_PASSPORT = Pattern.compile("^[K|H]\\d{8}$"); //香港回乡通行证
+    public static final Pattern M_PASSPORT = Pattern.compile("^[M]\\d{8}$"); //澳门回乡通行证
+    public static final Pattern TW_PASSPORT = Pattern.compile("^\\d{8}$|^\\d{10}$|^\\d{18}$"); //台湾台胞证
+
+    private PassportUtil() {
+    }
 
     /**
      * 是否有效护照号，忽略大陆（G因私普照/P因公普照/S公务护照/D外交护照）、港澳通行证（H/M）的大小写<br>

@@ -35,11 +35,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
 
-        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
-        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.11.3</maven-javadoc-plugin.version>
+        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
         <!-- 直接通过mvn deploy上传到目标仓库，无Staging概念‌，立即生效（不适合Central发布），一般用于内部私有仓库发布 -->
-        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+        <!--<maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>-->
         <!-- 签名构件包 -->
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <!-- 通过mvn deploy上传到‌Staging临时仓库，需人工验证后发布，若签名构件包则需要maven-gpg-plugin -->
@@ -57,19 +57,19 @@
         <!--<maven.source.skip>false</maven.source.skip>-->
 
         <!-- 依赖 -->
-        <spring.version>5.3.34</spring.version>
-        <spring-boot.version>2.7.18</spring-boot.version>
+        <!--<spring.version>5.3.34</spring.version>-->
+        <spring-boot.version>3.5.14</spring-boot.version>
         <!-- jackson<->bean -->
         <fastjson2.version>2.0.8</fastjson2.version>
         <!-- xml<->bean -->
         <!--<dom4j.version>2.1.4</dom4j.version>-->
         <!-- XPath -->
         <!--<jaxen.version>1.1.6</jaxen.version>-->
-        <jackson.version>2.15.4</jackson.version>
+        <!--<jackson.version>2.21.2</jackson.version>-->
         <!-- Hutool -->
         <hutool.version>5.8.38</hutool.version>
         <!-- bouncycastle：密钥算法 -->
-        <bouncycastle.version>1.75</bouncycastle.version>
+        <bouncycastle.version>1.84</bouncycastle.version>
         <!-- 高性能深拷贝：Kryo、FST(2.x-JDK1.7及以上、3.x-JDK14及以上) -->
         <!--<fst.version>2.57</fst.version>-->
         <kryo.version>5.6.2</kryo.version>
@@ -98,13 +98,13 @@
     <dependencyManagement>
         <dependencies>
             <!-- Jackson BOM依赖 -->
-            <dependency>
+            <!--<dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
                 <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
+            </dependency>-->
             <!-- Spring Boot BOM依赖管理 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -114,13 +114,13 @@
                 <scope>import</scope>
             </dependency>
             <!-- Spring BOM依赖管理 -->
-            <dependency>
+            <!--<dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
                 <version>${spring.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
+            </dependency>-->
             <!-- Hutool BOM依赖 -->
             <dependency>
                 <groupId>cn.hutool</groupId>
@@ -137,46 +137,52 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
-            <optional>true</optional>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
-            <optional>true</optional>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <!--
             spring-boot-configuration-processor其实是一个注解处理器，在编译阶段干活的，一般在maven的声明都是 ,optional 为true;
             在打包时从用@ConfigurationProperties注释的项轻松生成自己的配置元数据文件
         -->
-        <!--<dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
+            <scope>provided</scope>
             <optional>true</optional>
-        </dependency>-->
+        </dependency>
         <!-- propertiestojson: 解决properties文件转Map时，将key中属性引用变成对象（不建议使用，依赖Gson） -->
         <!--<dependency>
             <groupId>pl.jalokim.propertiestojson</groupId>
             <artifactId>java-rule-to-jackson</artifactId>
             <version>${propertiestojson.version}</version>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>-->
         <!-- yaml、rule、json三者互转 -->
         <!--<dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-rule</artifactId>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>-->
         <!-- xml<->bean：依赖StAX 实现（如 Woodstox）-->
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
@@ -184,39 +190,41 @@
             <artifactId>jackson-module-blackbird</artifactId>
             <!-- 基于ASM（对Java9+兼容性差）-->
             <!--<artifactId>jackson-module-afterburner</artifactId>-->
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <!-- Kryo：依赖objenesis -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
             <version>${kryo.version}</version>
+            <optional>true</optional>
         </dependency>
         <!-- hutool -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-crypto</artifactId>
+            <optional>true</optional>
         </dependency>
         <!-- 加密 -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15to18</artifactId>
             <version>${bouncycastle.version}</version>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <!-- 日志 -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <!-- 类冗余代码生成（如：getter/setter、toString等） -->
@@ -338,6 +346,23 @@
                     <docencoding>UTF-8</docencoding>
                     <!-- 指定 HTML 字符集 -->
                     <charset>UTF-8</charset>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>

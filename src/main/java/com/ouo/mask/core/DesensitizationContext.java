@@ -19,9 +19,10 @@ import java.util.Arrays;
 @Getter
 @Builder(builderClassName = "Builder")
 public class DesensitizationContext {
-    private final String fieldName; // 当前脱敏字段/属性名称
-    private final Annotation annotation; // 当前脱敏字段脱敏注解规则
-
+    // 当前脱敏字段/属性名称
+    private final String fieldName;
+    // 当前脱敏字段脱敏注解规则
+    private final Annotation annotation;
     //private DesensitizationContext parent;
 
     DesensitizationContext(String fieldName, Annotation annotation, DesensitizationContext parent) {

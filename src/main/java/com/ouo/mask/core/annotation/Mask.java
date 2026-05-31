@@ -33,7 +33,7 @@ public @interface Mask {
      */
     CustomShow show() default @CustomShow(pre = 0, suf = 0);
 
-    //自定义显示
+    // 自定义显示
     @Target({})
     @Retention(RetentionPolicy.RUNTIME)
     @interface CustomShow {

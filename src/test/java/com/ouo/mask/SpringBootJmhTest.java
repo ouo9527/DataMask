@@ -208,7 +208,7 @@ public class SpringBootJmhTest {
     // 方式二：通过 JUnit 执行 JMH（简化版）
     // ----------------------
     @Test
-    public void runJMHBenchmark() throws RunnerException {
+    void runJMHBenchmark() throws RunnerException {
         Options options = new OptionsBuilder()
                 .verbosity(VerboseMode.EXTRA) // 打印额外日志
                 .include(SpringBootJmhTest.class.getSimpleName()) // 指定要运行的基准测试类

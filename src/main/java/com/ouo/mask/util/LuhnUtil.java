@@ -12,9 +12,12 @@ import java.util.List;
  * Date:     2024/11/28
  ***********************************************************/
 @Slf4j
-public class LuhnUtil {
+public final class LuhnUtil {
 
     private static final int DEC_RADIX = 10;
+
+    private LuhnUtil() {
+    }
 
     /**
      * Validate bank card number using Luhn algorithm

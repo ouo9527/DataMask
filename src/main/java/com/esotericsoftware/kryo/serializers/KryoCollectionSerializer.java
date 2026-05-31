@@ -20,8 +20,10 @@ import static com.esotericsoftware.kryo.serializers.DefaultSerializers.*;
  ***********************************************************/
 @RequiredArgsConstructor
 public final class KryoCollectionSerializer<T extends Collection> extends Serializer<T> {
-    private final Serializer<T> delegate; // 当前委派序例化器
-    private final DesensitizationContext context; // 脱敏上下文
+    // 当前委派序例化器
+    private final Serializer<T> delegate;
+    // 脱敏上下文
+    private final DesensitizationContext context;
 
     @Override
     public void write(Kryo kryo, Output output, T object) {
@@ -34,6 +36,7 @@ public final class KryoCollectionSerializer<T extends Collection> extends Serial
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T copy(Kryo kryo, T original) {
         if (kryo instanceof KryoDesensitizer) {
             if (this.delegate instanceof CollectionSerializer) {
@@ -43,20 +46,20 @@ public final class KryoCollectionSerializer<T extends Collection> extends Serial
                 } else if (this.delegate instanceof TreeSetSerializer) {
                     copy = ((TreeSetSerializer) this.delegate).createCopy(kryo, (TreeSet) original);
                 } else {
-                    copy = ((CollectionSerializer) this.delegate).createCopy(kryo, original);
+                    copy = ((CollectionSerializer<Collection>) this.delegate).createCopy(kryo, original);
                 }
 
                 kryo.reference(copy);
 
                 for (Object element : original)
-                    copy.add(((KryoDesensitizer) kryo).desensitize(element, this.context));
+                    copy.add(((KryoDesensitizer<Object>) kryo).desensitize(element, this.context));
 
                 return (T) copy;
             } else if (this.delegate instanceof CollectionsSingletonListSerializer) {
-                return (T) Collections.singletonList(((KryoDesensitizer) kryo).desensitize(((List) original).get(0),
+                return (T) Collections.singletonList(((KryoDesensitizer<Object>) kryo).desensitize(((List) original).get(0),
                         this.context));
             } else if (this.delegate instanceof CollectionsSingletonSetSerializer) {
-                return (T) Collections.singleton(((KryoDesensitizer) kryo).desensitize(original.iterator().next(),
+                return (T) Collections.singleton(((KryoDesensitizer<Object>) kryo).desensitize(original.iterator().next(),
                         this.context));
             }
         }

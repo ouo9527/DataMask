@@ -7,7 +7,6 @@ package com.ouo.mask.core;
  * Date:     2026/4/5
  ***********************************************************/
 public interface DesensitizationExecutor {
-
     /**
      * 数据脱敏
      *

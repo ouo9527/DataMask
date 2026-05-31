@@ -26,35 +26,34 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class DefaultDesensitizationExecutor implements DesensitizationExecutor {
     // 默认内置脱敏器（不能被修改）
-    private transient final Map<Class, Desensitizer> defaultDesensitizers = new HashMap<>();
+    private final transient Map<Class, Desensitizer> defaultDesensitizers = new HashMap<>();
     // 自定义脱敏器（可被修改）
     private Map<Class, Desensitizer> desensitizers = new ConcurrentHashMap<>();
     // 默认脱敏器（基于Kryo）
-    private final ThreadLocal<Desensitizer> kryoThreadLocal;
+    private final ThreadLocal<Desensitizer<?>> kryoThreadLocal;
 
+    @SuppressWarnings("unchecked")
     public DefaultDesensitizationExecutor(DesensitizationProperties properties, SemiStructuredMapper mapper) {
         // 注册数据类型脱敏器（若找不到合适数据类型脱敏器时，由KryoDesensitizer脱敏器处理）
         // 半结构化类型脱敏器
-        SemiStructuredDesensitizer semiStructuredDesensitizer = new JacksonDesensitizer(this, mapper);
-        // 字符类型脱敏器
-        CharSequenceDesensitizer charSequenceDesensitizer = new CharSequenceDesensitizer(this);
-        // 字符串类型脱敏器
-        StringDesensitizer stringDesensitizer = new StringDesensitizer(this, semiStructuredDesensitizer,
-                properties);
-
+        SemiStructuredDesensitizer semiStructuredDesensitizer = new JacksonDesensitizer<>(this, mapper);
         this.defaultDesensitizers.put(Node.class, semiStructuredDesensitizer);
         this.defaultDesensitizers.put(Iterable.class, semiStructuredDesensitizer); // Iterable可多次迭代，而Iterator一次性迭代器类型（游标/指针迭代）
         //this.register(Iterator.class, semiStructuredDesensitizer);
-        this.defaultDesensitizers.put(CharSequence.class, charSequenceDesensitizer);
-        this.defaultDesensitizers.put(String.class, stringDesensitizer);
+        // 字符类型脱敏器
+        this.defaultDesensitizers.put(CharSequence.class, new CharSequenceDesensitizer(this));
+        // 字符串类型脱敏器
+        this.defaultDesensitizers.put(String.class, new StringDesensitizer(this, semiStructuredDesensitizer,
+                properties));
 
         this.desensitizers.putAll(this.defaultDesensitizers);
 
         // 默认脱敏器（基于Kryo）
-        this.kryoThreadLocal = ThreadLocal.withInitial(() -> new KryoDesensitizer(this));
+        this.kryoThreadLocal = ThreadLocal.withInitial(() -> new KryoDesensitizer<>(this));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T desensitize(T data, DesensitizationContext context) {
         Desensitizer desensitizer = this.getDesensitizer(ClassUtil.getClass(data));
         if (null == desensitizer) return data;
@@ -78,6 +77,7 @@ public class DefaultDesensitizationExecutor implements DesensitizationExecutor {
      * @param type 数据类型
      * @return 返回与之对应数据脱敏处理器
      */
+    @SuppressWarnings("unchecked")
     protected Desensitizer getDesensitizer(Class type) {
         Desensitizer desensitizer = null;
         if (null != type) {

@@ -32,16 +32,16 @@ import java.util.Map;
  * Date:     2026/4/5
  ***********************************************************/
 @Slf4j
-public class JsonTest {
+class JsonTest {
     private JacksonObjectMapper objectMapper = null;
 
     @BeforeEach
-    public void init() {
+    void init() {
         this.objectMapper = new JacksonObjectMapper();
     }
 
     @Test
-    public void jackson() throws Exception {
+    void jackson() throws Exception {
         // 若开启SerializationFeature.FAIL_ON_EMPTY_BEANS，则无属性的空对象时，会报No serializer found for class java.lang.Object and no rule discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
         log.info("无属性的空对象转JSON字符串：{}", objectMapper.toString(new Object(), SemiStructType.JSON));
         log.info("无属性的空对象转XML字符串：{}", objectMapper.toString(new Object(), SemiStructType.XML));
@@ -97,7 +97,7 @@ public class JsonTest {
     }
 
     @Test
-    public void fastjson() throws Exception {
+    void fastjson() throws Exception {
         User user = new User();
         user.setUid(123);
         user.setName("李四");

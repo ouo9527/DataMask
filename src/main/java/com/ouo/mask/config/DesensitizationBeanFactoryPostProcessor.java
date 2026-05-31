@@ -15,6 +15,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertySources;
+import org.springframework.lang.NonNull;
 
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
     private Environment environment; // 环境配置
 
     @Override
+    @SuppressWarnings("unchecked")
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         // 判断DesensitizationProperties bean是否存在，不存在则创建
         String[] beans = beanFactory.getBeanNamesForType(DesensitizationProperties.class);
@@ -49,7 +51,7 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
     }
 
     @Override
-    public void setEnvironment(Environment environment) {
+    public void setEnvironment(@NonNull Environment environment) {
         this.environment = environment;
     }
 
@@ -65,6 +67,7 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
      * @param propertySources 应用属性配属源
      * @return 脱敏规则
      */
+    @SuppressWarnings("unchecked")
     private Dict processProperties(PropertySources propertySources) {
         Dict dict = Dict.create(); // 脱敏规则配置
         if (null != propertySources) {
@@ -74,13 +77,11 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
                         Object source = propertySource.getSource();
                         if (source instanceof Map) {
                             ((Map<String, Object>) source)
-                                    .entrySet()
-                                    .stream()
-                                    .forEach(entry -> {
-                                        if (StrUtil.startWith(entry.getKey(), DesensitizationProperties.PREFIX)) {
+                                    .forEach((key, value) -> {
+                                        if (StrUtil.startWith(key, DesensitizationProperties.PREFIX)) {
                                             BeanPath
-                                                    .create(entry.getKey())
-                                                    .set(dict, entry.getValue());
+                                                    .create(key)
+                                                    .set(dict, value);
                                         }
                                     });
                         }

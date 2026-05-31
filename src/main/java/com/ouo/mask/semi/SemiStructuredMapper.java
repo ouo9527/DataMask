@@ -9,7 +9,6 @@ import com.ouo.mask.util.StrUtil;
  * Date:     2026/4/5
  ***********************************************************/
 public interface SemiStructuredMapper {
-
     /**
      * 将半结构化(如：JSON/XML)字符串转Java Bean
      *

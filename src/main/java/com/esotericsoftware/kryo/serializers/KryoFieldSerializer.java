@@ -33,8 +33,10 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 public final class KryoFieldSerializer<T> extends Serializer<T> {
-    private final Serializer<T> delegate; // 当前委派序例化器
-    private final DesensitizationContext context; // 脱敏上下文
+    // 当前委派序例化器
+    private final Serializer<T> delegate;
+    // 脱敏上下文
+    private final DesensitizationContext context;
 
     @Override
     public void write(Kryo kryo, Output output, T object) {
@@ -78,6 +80,7 @@ public final class KryoFieldSerializer<T> extends Serializer<T> {
      * @param src         原始数据
      * @param dest        脱敏后数据
      */
+    @SuppressWarnings("unchecked")
     private <F extends ReflectField> void desensitize(F cachedField, T src, T dest) {
         FieldSerializer<T> serializer = ((FieldSerializer<T>) this.delegate);
         KryoDesensitizer kryo = (KryoDesensitizer<?>) serializer.getKryo();

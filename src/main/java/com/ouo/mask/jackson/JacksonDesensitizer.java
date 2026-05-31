@@ -30,6 +30,7 @@ public class JacksonDesensitizer<T> extends SemiStructuredDesensitizer<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T desensitize(T data, DesensitizationContext context) {
         try {
             if (data instanceof String) {

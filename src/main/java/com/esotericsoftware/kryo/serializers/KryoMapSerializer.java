@@ -24,8 +24,10 @@ import static com.esotericsoftware.kryo.serializers.DefaultSerializers.*;
  ***********************************************************/
 @RequiredArgsConstructor
 public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
-    private final Serializer<T> delegate; // 当前委派序例化器
-    private final DesensitizationContext context; // 脱敏上下文
+    // 当前委派序例化器
+    private final Serializer<T> delegate;
+    // 脱敏上下文
+    private final DesensitizationContext context;
 
     @Override
     public void write(Kryo kryo, Output output, T object) {
@@ -38,6 +40,7 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T copy(Kryo kryo, T original) {
         if (kryo instanceof KryoDesensitizer) {
             if (this.delegate instanceof MapSerializer) {
@@ -53,12 +56,12 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
 
                 //kryo.reference(copy);
                 for (Object obj : original.entrySet()) {
-                    Map.Entry<?, ?> entry = this.desensitize((KryoDesensitizer) kryo, (Map.Entry) obj);
+                    Map.Entry<?, ?> entry = this.desensitize((KryoDesensitizer<Object>) kryo, (Map.Entry<?, ?>) obj);
                     copy.put(entry.getKey(), entry.getValue());
                 }
                 return (T) copy;
             } else if (this.delegate instanceof CollectionsSingletonMapSerializer) {
-                Map.Entry<?, ?> entry = this.desensitize((KryoDesensitizer) kryo, (Map.Entry) original.entrySet()
+                Map.Entry<?, ?> entry = this.desensitize((KryoDesensitizer<Object>) kryo, (Map.Entry<?, ?>) original.entrySet()
                         .iterator().next());
 
                 return (T) Collections.singletonMap(entry.getKey(), entry.getValue());
@@ -75,7 +78,7 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
      * @param entry 原始数据
      * @return 脱敏后数据
      */
-    private Map.Entry<?, ?> desensitize(KryoDesensitizer kryo, Map.Entry<?, ?> entry) {
+    private Map.Entry<?, ?> desensitize(KryoDesensitizer<Object> kryo, Map.Entry<?, ?> entry) {
         Object key = entry.getKey();
 
         if (key instanceof String) return MapUtil.builder().put(key, kryo.desensitize(entry.getValue(),

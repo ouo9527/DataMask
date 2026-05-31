@@ -23,7 +23,6 @@ import java.util.List;
  * Date:     2024/12/29
  ***********************************************************/
 class EscapeSpelExpressionParser extends SpelExpressionParser {
-
     // escape character
     private static final char ESCAPE_CHAR = '\\';
 

@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
  * Date:     2024/4/15
  ***********************************************************/
 public class StrUtil extends cn.hutool.core.util.StrUtil {
-    public final static String DEFAULT_ROOT_NAME = "_"; // 默认根节点
-    public final static String DEFAULT_START_ROOT_NODE = "<" + DEFAULT_ROOT_NAME + ">"; // 默认开始根节点
-    public final static String DEFAULT_END_ROOT_NODE = "</" + DEFAULT_ROOT_NAME + ">"; // 默认结束根节点
+    public static final String DEFAULT_ROOT_NAME = "_"; // 默认根节点
+    public static final String DEFAULT_START_ROOT_NODE = "<" + DEFAULT_ROOT_NAME + ">"; // 默认开始根节点
+    public static final String DEFAULT_END_ROOT_NODE = "</" + DEFAULT_ROOT_NAME + ">"; // 默认结束根节点
 
     public static boolean substringMatch(CharSequence str, int index, CharSequence substring) {
         if (index + substring.length() > str.length()) {
@@ -136,8 +136,8 @@ public class StrUtil extends cn.hutool.core.util.StrUtil {
     /**
      * 包装XML或XML片段
      *
-     * @param xml
-     * @return
+     * @param xml XML或XML片段字符串
+     * @return 返回包装后XML字符串
      */
     public static String wrapXml(String xml) {
         return new StrBuilder()

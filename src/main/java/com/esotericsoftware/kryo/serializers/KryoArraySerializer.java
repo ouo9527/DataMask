@@ -21,8 +21,10 @@ import static com.esotericsoftware.kryo.serializers.DefaultArraySerializers.Stri
  ***********************************************************/
 @RequiredArgsConstructor
 public final class KryoArraySerializer<T> extends Serializer<T> {
-    private final Serializer<T> delegate; // 当前委派序例化器
-    private final DesensitizationContext context; // 脱敏上下文
+    // 当前委派序例化器
+    private final Serializer<T> delegate;
+    // 脱敏上下文
+    private final DesensitizationContext context;
 
     @Override
     public void write(Kryo kryo, Output output, T object) {
@@ -35,6 +37,7 @@ public final class KryoArraySerializer<T> extends Serializer<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T copy(Kryo kryo, T original) {
         if (kryo instanceof KryoDesensitizer) {
             if (this.delegate instanceof StringArraySerializer) {
@@ -42,22 +45,20 @@ public final class KryoArraySerializer<T> extends Serializer<T> {
                 String[] copy = new String[n];
                 //System.arraycopy(original, 0, copy, 0, copy.length);
                 for (int i = 0; i < n; i++)
-                    copy[i] = (String) ((KryoDesensitizer) kryo).desensitize(((String[]) original)[i], this.context);
+                    copy[i] =((KryoDesensitizer<String>) kryo).desensitize(((String[]) original)[i], this.context);
 
                 return (T) copy;
-            } else if (this.delegate instanceof ObjectArraySerializer) {
-                if (original instanceof CharSequence[]) {
-                    int n = ((CharSequence[]) original).length;
-                    Object[] copy = (CharSequence[]) Array.newInstance(original.getClass().getComponentType(), n);
-                    kryo.reference(copy);
+            } else if (this.delegate instanceof ObjectArraySerializer && original instanceof CharSequence[]) {
+                int n = ((CharSequence[]) original).length;
+                Object[] copy = (CharSequence[]) Array.newInstance(original.getClass().getComponentType(), n);
+                kryo.reference(copy);
 
-                    for (int i = 0; i < n; i++) {
-                        CharSequence val = ((CharSequence[]) original)[i];
-                        copy[i] = ((KryoDesensitizer) kryo).desensitize(val, this.context);
-                    }
-
-                    return (T) copy;
+                for (int i = 0; i < n; i++) {
+                    CharSequence val = ((CharSequence[]) original)[i];
+                    copy[i] = ((KryoDesensitizer<CharSequence>) kryo).desensitize(val, this.context);
                 }
+
+                return (T) copy;
             }
         }
 

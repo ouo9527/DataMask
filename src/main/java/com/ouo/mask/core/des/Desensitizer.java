@@ -13,7 +13,7 @@ public interface Desensitizer<T> {
     /**
      * 获取脱敏执行器
      *
-     * @return
+     * @return 返回脱敏执行器
      */
     DesensitizationExecutor getDesensitizationExecutor();
 

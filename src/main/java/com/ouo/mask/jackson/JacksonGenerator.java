@@ -18,6 +18,7 @@ import java.io.IOException;
  * Date:     2026/4/5
  ***********************************************************/
 public class JacksonGenerator extends JsonGeneratorDelegate {
+
     private final SerializerProvider provider;
 
     public JacksonGenerator(JsonGenerator gen, SerializerProvider provider) {
@@ -46,7 +47,7 @@ public class JacksonGenerator extends JsonGeneratorDelegate {
      *
      * @param context Json流上下文
      * @param parent  脱敏父上下文
-     * @return
+     * @return 返回脱敏上下文
      */
     private DesensitizationContext builder(JsonStreamContext context, DesensitizationContext parent) {
         if (null == context || context.inRoot()) return DesensitizationContext

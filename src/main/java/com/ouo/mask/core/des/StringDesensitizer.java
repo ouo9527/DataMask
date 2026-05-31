@@ -57,9 +57,8 @@ public class StringDesensitizer implements Desensitizer<String> {
             return DesensitizedUtil.maskDesensitized((Mask) context.getAnnotation(),
                     context.getFieldName(), data);
         // 根据配置中全局脱敏规则进行脱敏
-        Map<String, DesensitizationRule> rules = null;
-        if (null == this.properties || MapUtil.isEmpty(rules = this.properties.getRules()))
-            return data;
+        Map<String, DesensitizationRule> rules = (null == this.properties)
+                ? MapUtil.empty() : this.properties.getRules();
         // 基于全局且按命名方式匹配脱敏
         String fieldName = StrUtil.toCamelCase2(context.getFieldName());
         return DesensitizedUtil.desensitized(rules.get(fieldName), fieldName, data);

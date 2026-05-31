@@ -16,7 +16,6 @@ import org.springframework.util.Assert;
  ***********************************************************/
 @Getter
 public abstract class SpelExpressionEvaluator {
-
     // SpEL表达式解析器
     private final SpelExpressionParser parser;
 

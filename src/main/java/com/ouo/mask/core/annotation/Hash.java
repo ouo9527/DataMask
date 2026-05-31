@@ -27,9 +27,9 @@ public @interface Hash {
     enum AlgorithmEnum {
         SM3(10),
         MD5(20),
-        HASH256(30);
+        SHA256(30);
 
-        private int code;
+        private final int code;
 
         AlgorithmEnum(int code) {
             this.code = code;

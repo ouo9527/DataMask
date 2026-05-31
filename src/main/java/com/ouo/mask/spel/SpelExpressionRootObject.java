@@ -10,15 +10,19 @@ import java.lang.reflect.Method;
 @Getter
 @Builder(builderClassName = "Builder")
 class SpelExpressionRootObject {
-    private final Object target; // 目标对象（可以是代理对象）
-    private final Class targetClass; // 目标类Class（原始类Class）
-    private final Method method; // 被调用方法
-    private final Object[] args; // 被调用方法实参
+    // 目标对象（可以是代理对象）
+    private final Object target;
+    // 目标类Class（原始类Class）
+    private final Class targetClass;
+    // 被调用方法
+    private final Method method;
+    // 被调用方法实参
+    private final Object[] args;
 
     /**
      * 获取目标类名称（包含包名）
      *
-     * @return
+     * @return 返回目标类名称
      */
     public String getTargetName() {
         return this.targetClass.getName();
@@ -27,7 +31,7 @@ class SpelExpressionRootObject {
     /**
      * 获取目标类名称（不包含包名）
      *
-     * @return
+     * @return 返回目标类名称
      */
     public String getTargetSimpleName() {
         return this.targetClass.getSimpleName();
@@ -36,7 +40,7 @@ class SpelExpressionRootObject {
     /**
      * 获取被调用方法名
      *
-     * @return
+     * @return 返回方法名称
      */
     public String getMethodName() {
         return this.method.getName();
@@ -45,7 +49,7 @@ class SpelExpressionRootObject {
     /**
      * 获取被调用方法参数名
      *
-     * @return
+     * @return 返回方法参数名称
      */
     public String[] getParameterNames() {
         ParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();

@@ -24,7 +24,7 @@ import java.util.Map;
  * Author:   ouo
  * Date:     2026/4/5
  ***********************************************************/
-public class KyroTest {
+class KyroTest {
 
     // 对象处理
     private final ThreadLocal<Kryo> kryoThreadLocal;
@@ -70,7 +70,7 @@ public class KyroTest {
      * 高性能深拷贝
      */
     @Test
-    public void deeCopy() throws IOException {
+    void deeCopy() throws IOException {
         User user = new User("");
         user.setName("张王四");
         user.setExtra("{\"phone\":17722657194}");

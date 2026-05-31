@@ -11,7 +11,6 @@ import org.springframework.expression.EvaluationException;
  ***********************************************************/
 @FunctionalInterface
 public interface PlaceholderExpressionFunction<R> {
-
     /**
      * 处理占位符表达式执行后的结果
      *

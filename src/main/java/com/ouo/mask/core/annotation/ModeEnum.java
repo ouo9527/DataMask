@@ -22,7 +22,7 @@ public enum ModeEnum {
     // 掩盖
     MASK(50);
 
-    private int code;
+    private final int code;
 
     ModeEnum(int code) {
         this.code = code;

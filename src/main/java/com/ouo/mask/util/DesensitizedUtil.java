@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
  ***********************************************************/
 @Slf4j
 public abstract class DesensitizedUtil {
+    private DesensitizedUtil() {}
 
     /**
      * 置空模式(脱敏后不等长)：根据规则脱敏该字段的数据
@@ -63,7 +64,7 @@ public abstract class DesensitizedUtil {
     public static String hashDesensitized(HashDesensitizationRule rule, String fieldName, String data) {
         if (!matches(rule, fieldName, data)) return data;
         switch (rule.getAlgorithm()) {
-            case HASH256:
+            case SHA256:
                 return new Digester(DigestAlgorithm.SHA256)
                         .setSalt(StrUtil.trimToEmpty(rule.getSalt()).getBytes())
                         .digestHex(data);
@@ -413,8 +414,8 @@ public abstract class DesensitizedUtil {
      * @return 返回匹配结果
      */
     private static boolean matches(DesensitizationRule rule, String fieldName, String data) {
-        log.debug("校验是否不能脱敏：脱敏场景={}, 脱敏规则={}, 待脱敏字段={}", rule, fieldName);
         //通过驼峰匹配
-        return !((StrUtil.isBlank(data) || null == rule || !StrUtil.equals(StrUtil.toCamelCase2(fieldName), StrUtil.toCamelCase2(rule.getField()))));
+        return null != rule && StrUtil.equals(StrUtil.toCamelCase2(fieldName), StrUtil.toCamelCase2(rule.getField())) &&
+                StrUtil.isNotBlank(data) ;
     }
 }
