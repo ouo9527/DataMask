@@ -90,7 +90,8 @@ public class JacksonDesensitizer<T> extends SemiStructuredDesensitizer<T> {
      * @param context      脱敏上下文
      * @return 返回半结构化(如 ： JSON / XML)字符串
      */
-    private String toString(Object obj, ObjectMapper objectMapper, DesensitizationContext context) throws JsonProcessingException {
+    private String toString(Object obj, ObjectMapper objectMapper, DesensitizationContext context)
+            throws JsonProcessingException {
         if (null == objectMapper) return StrUtil.toStringOrNull(obj);
 
         return objectMapper

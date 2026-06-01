@@ -24,19 +24,21 @@ class TemplateStringExpression extends CompositeStringExpression {
      * 从多个模板表达式获取值
      *
      * @param context 表达式上下文
-     * @param fn      表达式回调处理
+     * @param fn 表达式回调处理
      * @return 返回表达式执行结果
      */
-    public <R> R getValue(EvaluationContext context, Class<R> resultType, @Nullable PlaceholderExpressionFunction<R> fn) {
+    public <R> R getValue(EvaluationContext context, Class<R> resultType,
+                          @Nullable PlaceholderExpressionFunction<R> fn) {
         Expression[] expressions = this.getExpressions();
         if (ArrayUtil.isEmpty(expressions)) return null;
 
         StringBuilder sb = new StringBuilder();
         for (Expression expression : expressions) {
             if (null == expression) continue;
-            sb.append(expression instanceof PlaceholderExpression
+            Object val = (expression instanceof PlaceholderExpression)
                     ? ((PlaceholderExpression) expression).getValue(context, resultType, fn)
-                    : expression.getValue(context, String.class));
+                    : expression.getValue(context, resultType);
+            if (null != val) sb.append(val);
         }
         return ExpressionUtils.convertTypedValue(context, new TypedValue(sb), resultType);
     }

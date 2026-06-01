@@ -11,7 +11,8 @@ import org.springframework.expression.common.TemplateParserContext;
  ***********************************************************/
 public class PoundSpelExpressionEvaluator extends SpelExpressionEvaluator {
     // 模板表达式解析上下文
-    private final TemplateParserContext parserContext = new TemplateParserContext("#{", "}");
+    private final TemplateParserContext parserContext = new TemplateParserContext("#{",
+            "}");
 
     @Override
     public ParserContext getParserContext() {

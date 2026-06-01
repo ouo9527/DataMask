@@ -282,7 +282,8 @@ public abstract class DesensitizedUtil {
                     if (10 == len) return StrUtil.hide(data, 2, len - 3);
                     return StrUtil.hide(data, 3, len - 4);
                 case ADDRESS: {
-                    List<String> addrs = ReUtil.getAllGroups(Pattern.compile("(.+省)?(.+市)?(.+自治区)?(.+行政区)?(.+县)?(.+区)?.+"), data, false);
+                    List<String> addrs = ReUtil.getAllGroups(Pattern.compile(
+                            "(.+省)?(.+市)?(.+自治区)?(.+行政区)?(.+县)?(.+区)?.+"), data, false);
                     if (CollUtil.isEmpty(addrs)) return data;
                     StringBuilder newData = new StringBuilder();
                     int i = 0;
@@ -316,12 +317,10 @@ public abstract class DesensitizedUtil {
                 case EMAIL: {
                     List<String> email = StrUtil.splitTrim(data, '@');
                     if (2 == email.size()) {
-                        StringBuilder newData = new StringBuilder();
-                        return newData
-                                .append(StrUtil.hide(email.get(0), 3, StrUtil.length(email.get(0))))
-                                .append('@')
-                                .append(email.get(1))
-                                .toString();
+                        String newData = StrUtil.hide(email.get(0), 3, StrUtil.length(email.get(0))) +
+                                '@' +
+                                email.get(1);
+                        return newData;
                     } else return data;
                 }
                 case CAR_LICENSE:

@@ -36,9 +36,11 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
         // 判断DesensitizationProperties bean是否存在，不存在则创建
         String[] beans = beanFactory.getBeanNamesForType(DesensitizationProperties.class);
         if (ArrayUtil.isEmpty(beans)) {
-            log.info("【{}】bean未加入到Spring容器，开始读取解析脱敏配置后注入Spring容器！", DesensitizationProperties.class.getName());
+            log.info("【{}】bean未加入到Spring容器，开始读取解析脱敏配置后注入Spring容器！",
+                    DesensitizationProperties.class.getName());
             // 解决Spring 中 <context:property-placeholder>、PropertySourcesPlaceholderConfigurer或PropertyPlaceholderConfigurer 未将localProperties或environmentProperties加入到Environment中
-            PropertySourcesPlaceholderConfigurer placeholderConfigurer = beanFactory.getBean(PropertySourcesPlaceholderConfigurer.class);
+            PropertySourcesPlaceholderConfigurer placeholderConfigurer = beanFactory.getBean(
+                    PropertySourcesPlaceholderConfigurer.class);
             Dict dict = this.processProperties(placeholderConfigurer.getAppliedPropertySources()); // 脱敏属性配置
             if (environment instanceof ConfigurableEnvironment) {
                 dict.putAll(this.processProperties(((ConfigurableEnvironment) environment).getPropertySources()));
@@ -46,7 +48,8 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
             DesensitizationProperties desensitizationProperties = new DesensitizationProperties();
             Object rules = dict.getByPath(DesensitizationProperties.RULES);
             if (rules instanceof Map) desensitizationProperties.setRules((Map<String, ?>) rules);
-            beanFactory.registerSingleton(StrUtil.toCamelCase(DesensitizationProperties.class.getSimpleName()), desensitizationProperties);
+            beanFactory.registerSingleton(StrUtil.lowerFirst(DesensitizationProperties.class.getSimpleName()),
+                    desensitizationProperties);
         }
     }
 
@@ -71,21 +74,17 @@ public class DesensitizationBeanFactoryPostProcessor implements BeanFactoryPostP
     private Dict processProperties(PropertySources propertySources) {
         Dict dict = Dict.create(); // 脱敏规则配置
         if (null != propertySources) {
-            propertySources
-                    .stream()
-                    .forEach(propertySource -> {
-                        Object source = propertySource.getSource();
-                        if (source instanceof Map) {
-                            ((Map<String, Object>) source)
-                                    .forEach((key, value) -> {
-                                        if (StrUtil.startWith(key, DesensitizationProperties.PREFIX)) {
-                                            BeanPath
-                                                    .create(key)
-                                                    .set(dict, value);
-                                        }
-                                    });
-                        }
-                    });
+            propertySources.stream()
+                    // 1. 过滤：只保留 source 是 Map 类型的 PropertySource
+                    .filter(ps -> ps.getSource() instanceof Map)
+                    // 2. 映射：将 PropertySource 转换为 Map<String, Object>
+                    .map(ps -> (Map<String, Object>) ps.getSource())
+                    // 3. 扁平化：将多个 Map 的 entrySet 流合并为一个大的 Entry 流
+                    .flatMap(map -> map.entrySet().stream())
+                    // 4. 过滤：只保留 key 以指定前缀开头的 entry
+                    .filter(entry -> StrUtil.startWith(entry.getKey(),
+                            DesensitizationProperties.PREFIX))
+                    .forEach(entry -> BeanPath.create(entry.getKey()).set(dict, entry.getValue()));
         }
         return dict;
     }

@@ -181,7 +181,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -190,7 +189,6 @@
             <artifactId>jackson-module-blackbird</artifactId>
             <!-- 基于ASM（对Java9+兼容性差）-->
             <!--<artifactId>jackson-module-afterburner</artifactId>-->
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <!-- Kryo：依赖objenesis -->

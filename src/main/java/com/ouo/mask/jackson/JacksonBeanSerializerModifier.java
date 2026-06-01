@@ -14,7 +14,8 @@ import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 public class JacksonBeanSerializerModifier extends BeanSerializerModifier {
 
     @Override
-    public JsonSerializer<?> modifySerializer(SerializationConfig config, BeanDescription beanDesc, JsonSerializer<?> serializer) {
+    public JsonSerializer<?> modifySerializer(SerializationConfig config, BeanDescription beanDesc,
+                                              JsonSerializer<?> serializer) {
         return new JacksonSerializer<>(super.modifySerializer(config, beanDesc, serializer));
     }
 }

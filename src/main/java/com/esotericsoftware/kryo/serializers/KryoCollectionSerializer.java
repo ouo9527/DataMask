@@ -56,11 +56,11 @@ public final class KryoCollectionSerializer<T extends Collection> extends Serial
 
                 return (T) copy;
             } else if (this.delegate instanceof CollectionsSingletonListSerializer) {
-                return (T) Collections.singletonList(((KryoDesensitizer<Object>) kryo).desensitize(((List) original).get(0),
-                        this.context));
+                return (T) Collections.singletonList(((KryoDesensitizer<Object>) kryo).desensitize(
+                        ((List) original).get(0), this.context));
             } else if (this.delegate instanceof CollectionsSingletonSetSerializer) {
-                return (T) Collections.singleton(((KryoDesensitizer<Object>) kryo).desensitize(original.iterator().next(),
-                        this.context));
+                return (T) Collections.singleton(((KryoDesensitizer<Object>) kryo).desensitize(
+                        original.iterator().next(), this.context));
             }
         }
 

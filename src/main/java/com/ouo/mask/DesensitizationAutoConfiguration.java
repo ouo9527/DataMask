@@ -30,7 +30,8 @@ import java.util.Optional;
  ***********************************************************/
 //@EnableAutoConfiguration // 若@EnableAutoConfiguration + spring.factories同时使用会造成 DesensitizationAutoConfiguration 循环依赖
 @AutoConfiguration
-@ConditionalOnProperty(prefix = DesensitizationProperties.PREFIX, name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = DesensitizationProperties.PREFIX, name = "enabled", havingValue = "true",
+        matchIfMissing = true)
 @Import({SpringUtil.class, DesensitizationResponseBodyAdvice.class})
 //@EnableConfigurationProperties//({DesensitizationProperties.class})
 //@RefreshScope //springcloud刷新@Value注解属性

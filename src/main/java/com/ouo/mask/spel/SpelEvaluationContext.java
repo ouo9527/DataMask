@@ -1,7 +1,6 @@
 package com.ouo.mask.spel;
 
 import cn.hutool.core.util.ArrayUtil;
-import lombok.Builder;
 import org.springframework.context.expression.MethodBasedEvaluationContext;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
@@ -20,7 +19,6 @@ import java.util.Set;
  * Author:   ouo
  * Date:     2024/11/28
  ***********************************************************/
-@Builder(builderClassName = "Builder")
 public class SpelEvaluationContext implements EvaluationContext {
 
     private static final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
@@ -41,9 +39,9 @@ public class SpelEvaluationContext implements EvaluationContext {
     //private static final String SYS_VARIABLE = "sys";
 
     //private static final String ENV_VARIABLE = "env";
-    private EvaluationContext evaluationContext;
+    private final EvaluationContext evaluationContext;
 
-
+    @lombok.Builder(builderClassName = "Builder")
     SpelEvaluationContext(Object target, Method method, Object[] args, Class<?> targetClass, @Nullable Object result) {
         this.evaluationContext = this.createEvaluationContext(target, method, args, targetClass, result);
     }
@@ -132,11 +130,15 @@ public class SpelEvaluationContext implements EvaluationContext {
      *                    {@link #NO_RESULT} if there is no return at this time
      * @return the evaluation context
      */
-    private EvaluationContext createEvaluationContext(Object target, Method method, Object[] args, Class<?> targetClass,
-                                                      @Nullable Object result) {
+    private EvaluationContext createEvaluationContext(Object target, Method method, Object[] args,
+                                                      Class<?> targetClass, @Nullable Object result) {
 
-        SpelExpressionRootObject rootObject = SpelExpressionRootObject.builder().target(target).method(method).args(args)
-                .targetClass(targetClass).build();
+        SpelExpressionRootObject rootObject = SpelExpressionRootObject.builder()
+                .target(target)
+                .method(method)
+                .args(args)
+                .targetClass(targetClass)
+                .build();
 
         EvaluationContext evaluationContext = null;
 
@@ -179,10 +181,6 @@ public class SpelEvaluationContext implements EvaluationContext {
         public Builder args(Object... args) {
             this.args = args;
             return this;
-        }
-
-        public SpelEvaluationContext build() {
-            return new SpelEvaluationContext(this.target, this.method, this.args, this.targetClass, this.result);
         }
     }
 }

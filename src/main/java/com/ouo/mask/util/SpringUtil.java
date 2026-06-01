@@ -154,8 +154,10 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
     public static <T> T getBean(TypeReference<T> reference) {
         final ParameterizedType parameterizedType = (ParameterizedType) reference.getType();
         final Class<T> rawType = (Class<T>) parameterizedType.getRawType();
-        final Class<?>[] genericTypes = Arrays.stream(parameterizedType.getActualTypeArguments()).map(type -> (Class<?>) type).toArray(Class[]::new);
-        final String[] beanNames = getBeanFactory().getBeanNamesForType(ResolvableType.forClassWithGenerics(rawType, genericTypes));
+        final Class<?>[] genericTypes = Arrays.stream(parameterizedType.getActualTypeArguments()).map(
+                type -> (Class<?>) type).toArray(Class[]::new);
+        final String[] beanNames = getBeanFactory().getBeanNamesForType(ResolvableType.forClassWithGenerics(rawType,
+                genericTypes));
         return getBean(beanNames[0], rawType);
     }
 

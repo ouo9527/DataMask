@@ -13,7 +13,7 @@ class SpelExpressionRootObject {
     // 目标对象（可以是代理对象）
     private final Object target;
     // 目标类Class（原始类Class）
-    private final Class targetClass;
+    private final Class<?> targetClass;
     // 被调用方法
     private final Method method;
     // 被调用方法实参

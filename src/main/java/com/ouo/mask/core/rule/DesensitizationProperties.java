@@ -74,8 +74,8 @@ public class DesensitizationProperties {
             dr = new EmptyDesensitizationRule();
         } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.HASH.name())) { // 哈希
             dr = new HashDesensitizationRule();
-            ((HashDesensitizationRule) dr).setAlgorithm(Convert.convert(Hash.AlgorithmEnum.class,
-                    StrUtil.toUpperCase(MapUtil.getStr(rule, "algorithm", "")), Hash.AlgorithmEnum.SM3));
+            ((HashDesensitizationRule) dr).setAlgorithm(Convert.convert(Hash.AlgorithmEnum.class, StrUtil.toUpperCase(
+                    MapUtil.getStr(rule, "algorithm", "")), Hash.AlgorithmEnum.SM3));
             ((HashDesensitizationRule) dr).setSalt(MapUtil.getStr(rule, "salt", ""));
         } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REGEX.name())) { // 正则
             dr = new RegexDesensitizationRule();
@@ -84,7 +84,8 @@ public class DesensitizationProperties {
 
         } else if (StrUtil.equalsIgnoreCase(mode, ModeEnum.REPL.name())) { // 替换
             dr = new ReplDesensitizationRule();
-            ((ReplDesensitizationRule) dr).setSurplus(MapUtil.get(rule, "surplus", ReplDesensitizationRule.Posn.class, null));
+            ((ReplDesensitizationRule) dr).setSurplus(MapUtil.get(rule, "surplus",
+                    ReplDesensitizationRule.Posn.class, null));
             //对于springboot yml转properties时，若多层数组嵌套时，会被转成LinkedHashMap
             Object obj = MapUtil.get(rule, "posns", Object.class, null);
             List<?> posns = null;
@@ -104,7 +105,8 @@ public class DesensitizationProperties {
             dr = new MaskDesensitizationRule();
             ((MaskDesensitizationRule) dr).setType(Convert.convert(SensitiveTypeEnum.class,
                     StrUtil.toUpperCase(MapUtil.getStr(rule, "type", "")), null));
-            ((MaskDesensitizationRule) dr).setShow(MapUtil.get(rule, "show", MaskDesensitizationRule.CustomShow.class, null));
+            ((MaskDesensitizationRule) dr).setShow(MapUtil.get(rule, "show",
+                    MaskDesensitizationRule.CustomShow.class, null));
         } else {
             log.debug("{}.{}.mode: mode={} is not within the range of [empty,hash,regex,replace,mask]",
                     DesensitizationProperties.RULES, field, mode);

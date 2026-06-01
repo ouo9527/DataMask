@@ -61,8 +61,8 @@ public final class KryoMapSerializer<T extends Map> extends Serializer<T> {
                 }
                 return (T) copy;
             } else if (this.delegate instanceof CollectionsSingletonMapSerializer) {
-                Map.Entry<?, ?> entry = this.desensitize((KryoDesensitizer<Object>) kryo, (Map.Entry<?, ?>) original.entrySet()
-                        .iterator().next());
+                Map.Entry<?, ?> entry = this.desensitize((KryoDesensitizer<Object>) kryo,
+                        (Map.Entry<?, ?>) original.entrySet().iterator().next());
 
                 return (T) Collections.singletonMap(entry.getKey(), entry.getValue());
             }

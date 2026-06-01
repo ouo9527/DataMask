@@ -2,10 +2,11 @@ package com.ouo.mask.spel;
 
 import lombok.Getter;
 import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.expression.*;
-import org.springframework.expression.common.ExpressionUtils;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.EvaluationException;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ParserContext;
 import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /***********************************************************
  * 占位符表达式
@@ -78,7 +79,8 @@ public class PlaceholderExpression implements Expression {
     }
 
     @Override
-    public <T> T getValue(EvaluationContext context, Object rootObject, Class<T> desiredResultType) throws EvaluationException {
+    public <T> T getValue(EvaluationContext context, Object rootObject, Class<T> desiredResultType)
+            throws EvaluationException {
         return this.expression.getValue(context, rootObject, desiredResultType);
     }
 
@@ -118,7 +120,8 @@ public class PlaceholderExpression implements Expression {
     }
 
     @Override
-    public TypeDescriptor getValueTypeDescriptor(EvaluationContext context, Object rootObject) throws EvaluationException {
+    public TypeDescriptor getValueTypeDescriptor(EvaluationContext context, Object rootObject)
+            throws EvaluationException {
         return this.expression.getValueTypeDescriptor(context, rootObject);
     }
 
@@ -155,24 +158,36 @@ public class PlaceholderExpression implements Expression {
     /**
      * 获取模板表达式值
      *
-     * @param context    表达式执行上下文
      * @param resultType 期望结果类型
-     * @param fn         表达式回调处理
+     * @param fn 表达式回调处理
      * @return 返回表达式执行结果
      */
     @Nullable
-    public <R> R getValue(EvaluationContext context, @Nullable Class<R> resultType, @Nullable PlaceholderExpressionFunction<R> fn) {
-        Assert.notNull(context, "EvaluationContext is required");
+    public <R> R getValue(@Nullable Class<R> resultType, @Nullable PlaceholderExpressionFunction<R> fn) {
+        return this.getValue(null, resultType, fn);
+    }
+
+    /**
+     * 获取模板表达式值
+     *
+     * @param context 表达式执行上下文
+     * @param resultType 期望结果类型
+     * @param fn 表达式回调处理
+     * @return 返回表达式执行结果
+     */
+    @Nullable
+    public <R> R getValue(@Nullable EvaluationContext context, @Nullable Class<R> resultType,
+                          @Nullable PlaceholderExpressionFunction<R> fn) {
         R val = null;
         EvaluationException exception = null;
         try {
-            val = expression.getValue(context, resultType);
+            val = (null == context) ? expression.getValue(resultType) : expression.getValue(context, resultType);
         } catch (EvaluationException e) {
             if (null == fn) throw e;
             exception = e;
         }
         if (null != fn) val = fn.process(this, context, val, exception);
 
-        return ExpressionUtils.convertTypedValue(context, new TypedValue(val), resultType);
+        return val;
     }
 }

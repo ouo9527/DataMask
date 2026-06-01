@@ -139,7 +139,8 @@ public class JacksonObjectMapper implements SemiStructuredMapper {
             try {
                 if (xmlParser.nextToken() == JsonToken.START_OBJECT) {
                     // 反射获取
-                    XmlTokenStream _xmlTokens = (XmlTokenStream) ReflectUtil.getFieldValue(xmlParser, "_xmlTokens");
+                    XmlTokenStream _xmlTokens = (XmlTokenStream) ReflectUtil.getFieldValue(xmlParser,
+                            "_xmlTokens");
                     return _xmlTokens.getLocalName();
                 }
             } catch (Exception ignore) {
@@ -161,7 +162,8 @@ public class JacksonObjectMapper implements SemiStructuredMapper {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        throw new IllegalStateException("Unstructured data other than JSON and XML is not supported for conversion to Java Bean at this time.");
+        throw new IllegalStateException("Unstructured data other than JSON and XML is not supported for " +
+                "conversion to Java Bean at this time.");
     }
 
 
@@ -216,9 +218,11 @@ public class JacksonObjectMapper implements SemiStructuredMapper {
         try {
             if (SemiStructType.JSON.equals(type) || SemiStructType.XML.equals(type)) {
                 ObjectMapper objectMapper = SemiStructType.JSON.equals(type) ? this.jsonMapper : this.xmlMapper;
-                String val = StrUtil.strip((isPretty ? objectMapper.writerWithDefaultPrettyPrinter() : objectMapper.writer())
+                String val = StrUtil.strip((isPretty ? objectMapper.writerWithDefaultPrettyPrinter() :
+                                objectMapper.writer())
                                 .withRootName(rootName)
-                                .writeValueAsString(obj instanceof String ? objectMapper.readValue((String) obj, Object.class) : obj),
+                                .writeValueAsString(obj instanceof String ? objectMapper.readValue((String) obj,
+                                        Object.class) : obj),
                         System.lineSeparator());
 
 
